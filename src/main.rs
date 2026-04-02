@@ -40,18 +40,23 @@ pub struct AppEntry
 #[derive(Default, Clone)]
 pub struct AppData
 {
-    pub query:    String,
-    pub entries:  Vec<AppEntry>,
-    pub filtered: Vec<AppEntry>,
-    pub selected: usize,
-    pub loading:  bool,
-    pub config:   LauncherConfig,
+    pub query:          String,
+    pub entries:        Vec<AppEntry>,
+    pub filtered:       Vec<AppEntry>,
+    pub selected:       usize,
+    pub loading:        bool,
+    pub config:         LauncherConfig,
+    pub scroll_offset:  f32,
+    pub viewport_h:     f32,  // real visible height of the scrollable
+    pub content_h:      f32,  // real total content height
 }
 
 #[to_layer_message]
 #[derive(Debug, Clone)]
 pub enum Message
 {
+    Scrolled(f32, f32, f32),  // offset_y, viewport_h, content_h
+    ScrollTo(f32),
     QueryChanged(String),
     EntriesLoaded(Vec<AppEntry>),
     Launch(String),

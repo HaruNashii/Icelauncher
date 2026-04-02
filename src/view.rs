@@ -2,7 +2,7 @@
 use iced::{
     Alignment, Color, Element, Length, Padding, Vector,
     border::Radius,
-    widget::{Space, button, column, container, row, scrollable, text, text_input},
+    widget::{Id, Space, button, column, container, row, scrollable, text, text_input},
 };
 use iced_layershell::reexport::core::{Shadow, Border};
 
@@ -173,22 +173,47 @@ pub fn view(app: &AppData) -> Element<'_, Message>
             .collect();
 
         let cols = wc.grid_side_items.max(1);
+        let ep = ec.padding;
+        let base_h = (ec.name_size as f32) + ep[0] as f32 * 2.0 + 8.0;
+        let tall_h = base_h + (ec.comment_size as f32) + 6.0;
+
+        let filtered_chunk: Vec<Vec<&_>> = app.filtered.iter().take(max)
+            .collect::<Vec<_>>()
+            .chunks(cols)
+            .map(|c| c.to_vec())
+            .collect();
+
         let mut items_iter = items.into_iter();
         let mut grid_rows: Vec<Element<Message>> = Vec::new();
-        
-        loop 
+
+        for chunk_entries in &filtered_chunk
         {
+            let row_has_comment = chunk_entries.iter().any(|e|
+                ec.show_comment && !e.comment.is_empty()
+            );
+            let cell_h = if row_has_comment { tall_h } else { base_h };
+
             let chunk: Vec<Element<Message>> = items_iter.by_ref().take(cols).collect();
             if chunk.is_empty() { break; }
-            let mut cells: Vec<Element<Message>> = chunk.into_iter().map(|cell| container(cell).width(Length::Fill).into()).collect();
-            while cells.len() < cols 
+            let mut cells: Vec<Element<Message>> = chunk.into_iter()
+                .map(|cell| container(cell).width(Length::Fill).height(cell_h).into())
+                .collect();
+            while cells.len() < cols
             {
-                cells.push(Space::new().width(Length::Fill).into());
+                cells.push(container(Space::new()).width(Length::Fill).height(cell_h).into());
             }
             grid_rows.push(row(cells).spacing(wc.entry_spacing).into());
         }
 
-        scrollable(column(grid_rows).spacing(wc.entry_spacing)).height(Length::Fill).into()
+        scrollable(column(grid_rows).spacing(wc.entry_spacing))
+            .id(Id::new("results_scroll"))
+            .on_scroll(|vp| Message::Scrolled(
+                vp.relative_offset().y,
+                vp.bounds().height,
+                vp.content_bounds().height,
+            ))
+            .height(Length::Fill)
+            .into()
     };
 
 
