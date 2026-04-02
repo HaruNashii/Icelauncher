@@ -1,4 +1,4 @@
-# 🧊 Icelauncher
+# ☄️ Icelauncher
 
 **Icelauncher** is a lightweight, **Wayland application launcher** written in **Rust**, powered by **iced** and **iced-layer-shell**.
 
