@@ -77,12 +77,8 @@ pub fn view(app: &AppData) -> Element<'_, Message>
     else
     {
         let max = cfg.window.max_results;
-        let ir  = ic.border_radius;
 
-        let items: Vec<Element<Message>> = app.filtered
-            .iter()
-            .take(max)
-            .enumerate()
+        let items: Vec<Element<Message>> = app.filtered.iter().take(max).enumerate()
             .map(|(i, entry)|
             {
                 let is_selected = i == app.selected;
@@ -91,13 +87,44 @@ pub fn view(app: &AppData) -> Element<'_, Message>
                 // Icon badge
                 let icon_el: Element<Message> = if ic.show
                 {
-                    let icon_char  = derive_icon_char(&entry.name);
-                    let icon_color = if is_selected { Color::WHITE } else { ic.icon_color.to_iced() };
-                    let icon_bg    = if is_selected { ic.selected_color.to_iced() } else { ic.background_color.to_iced() };
-                    let ic_border  = ic.border_color.to_iced();
-                    let ic_w       = ic.border_width;
-
-                    container(text(icon_char).size(ic.text_size).color(icon_color))
+                    let ir       = ic.border_radius;
+                    let ic_border = ic.border_color.to_iced();
+                    let ic_w      = ic.border_width;
+                    let icon_bg   = if is_selected { ic.selected_color.to_iced() } else { ic.background_color.to_iced() };
+                
+                    // ── Real icon image ──────────────────────────────────────────────
+                    let inner: Element<Message> = if ic.use_real_icons
+                    {
+                        if let Some(ref path) = entry.icon_path
+                        {
+                                if path.ends_with(".svg")
+                                {
+                                    iced::widget::svg(path).width(ic.width  - 8).height(ic.height - 8).into()
+                                }
+                                else
+                                {
+                                    iced::widget::image(path).width(ic.width  - 8).height(ic.height - 8).into()
+                                }
+                        }
+                        else
+                        {
+                            // No icon found — fall back to first letter of name
+                            let letter = entry.name.chars().next()
+                                .map(|c| c.to_uppercase().to_string())
+                                .unwrap_or_else(|| "▶".to_string());
+                            let color = if is_selected { Color::WHITE } else { ic.icon_color.to_iced() };
+                            text(letter).size(ic.text_size).color(color).into()
+                        }
+                    }
+                    else
+                    {
+                        // Abstract emoji badge (original behaviour)
+                        let icon_char  = derive_icon_char(&entry.name);
+                        let icon_color = if is_selected { Color::WHITE } else { ic.icon_color.to_iced() };
+                        text(icon_char).size(ic.text_size).color(icon_color).into()
+                    };
+                
+                    container(inner)
                         .width(ic.width)
                         .height(ic.height)
                         .align_x(Alignment::Center)

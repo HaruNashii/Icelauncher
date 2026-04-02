@@ -285,6 +285,8 @@ pub struct IconConfig
 {
     /// Whether to show the icon badge at all
     pub show:             bool,
+    /// Use real app icons from the system icon theme instead of abstract badges
+    pub use_real_icons:   bool,
     /// Width of the icon badge in pixels
     pub width:            u32,
     /// Height of the icon badge in pixels
@@ -314,6 +316,7 @@ impl Default for IconConfig
         Self
         {
             show:             true,
+            use_real_icons:     true,
             width:            36,
             height:           36,
             text_size:        18,
@@ -569,6 +572,7 @@ LauncherConfig
     icon:
     (
         show:               true,
+        use_real_icons:     false,
         width:              36,
         height:             36,
         text_size:          18,

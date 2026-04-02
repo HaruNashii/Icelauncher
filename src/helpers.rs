@@ -1,15 +1,197 @@
 // ============ IMPORTS ============
 use iced::{Vector, Color, Theme, border::Radius, widget::button, widget::button::Status};
-use iced_layershell::reexport::core::{Shadow, Border};
 use std::{path::PathBuf, process::Command as StdCommand};
+use iced_layershell::reexport::core::{Shadow, Border};
 
+
+
+
+
+// ============ CRATES ============
 use crate::{AppData, AppEntry, Message};
 use crate::ron::LauncherConfig;
 
 
 
 
-// ============ APP LOADING ============
+
+// ============ FUNCTIONS ============
+pub fn resolve_icon(icon: &str) -> Option<String>
+{
+    if icon.is_empty() { return None; }
+    if icon.starts_with('/')
+    {
+        if std::path::Path::new(icon).exists() { return Some(icon.to_string()); }
+        return None;
+    }
+
+    let name = icon.strip_suffix(".png").or_else(|| icon.strip_suffix(".svg")).or_else(|| icon.strip_suffix(".xpm")).unwrap_or(icon);
+    let bases  = icon_base_dirs();
+    let themes = discover_themes(&bases);
+
+    for base in &bases
+    {
+        for theme in &themes
+        {
+            let theme_root = format!("{}/{}", base, theme);
+            for ext in ["svg", "png"]
+            {
+                let p = format!("{}/{}.{}", theme_root, name, ext);
+                if std::path::Path::new(&p).exists() { return Some(p); }
+            }
+
+            let standard_sizes =
+            [
+                "scalable", "512x512", "256x256", "128x128", "96x96",
+                "72x72", "64x64", "48x48", "36x36", "32x32", "24x24", "22x22", "16x16"
+            ];
+
+            for sz in standard_sizes
+            {
+                for ext in ["svg", "png"]
+                {
+                    let p = format!("{}/{}/apps/{}.{}", theme_root, sz, name, ext);
+                    if std::path::Path::new(&p).exists() { return Some(p); }
+                }
+            }
+
+            for ext in ["svg", "png"]
+            {
+                let p = format!("{}/apps/scalable/{}.{}", theme_root, name, ext);
+                if std::path::Path::new(&p).exists() { return Some(p); }
+            }
+
+            for sz in ["128", "96", "72", "64", "48", "36", "32", "24", "22", "16"]
+            {
+                for ext in ["svg", "png"]
+                {
+                    let p = format!("{}/apps/{}/{}.{}", theme_root, sz, name, ext);
+                    if std::path::Path::new(&p).exists() { return Some(p); }
+                }
+            }
+        }
+    }
+
+    let home      = home::home_dir().unwrap_or_default();
+    let home_str  = home.to_string_lossy();
+    let host_user = std::env::var("USER").unwrap_or_default();
+
+    let flatpak_candidates =
+    [
+        format!("{home_str}/.local/share/flatpak/exports/share/icons/hicolor/scalable/apps/{name}.svg"),
+        format!("{home_str}/.local/share/flatpak/exports/share/icons/hicolor/48x48/apps/{name}.png"),
+        format!("/var/lib/flatpak/exports/share/icons/hicolor/scalable/apps/{name}.svg"),
+        format!("/var/lib/flatpak/exports/share/icons/hicolor/48x48/apps/{name}.png"),
+        format!("/run/host/home/{host_user}/.local/share/flatpak/exports/share/icons/hicolor/scalable/apps/{name}.svg"),
+        format!("/run/host/home/{host_user}/.local/share/flatpak/exports/share/icons/hicolor/48x48/apps/{name}.png"),
+        format!("/run/host/var/lib/flatpak/exports/share/icons/hicolor/scalable/apps/{name}.svg"),
+        format!("/run/host/var/lib/flatpak/exports/share/icons/hicolor/48x48/apps/{name}.png"),
+    ];
+
+    for p in &flatpak_candidates
+    {
+        if std::path::Path::new(p).exists() { return Some(p.clone()); }
+    }
+
+    for ext in ["png", "svg"]
+    {
+        let p = format!("/usr/share/pixmaps/{}.{}", name, ext);
+        if std::path::Path::new(&p).exists() { return Some(p); }
+    }
+
+    let p = format!("/usr/share/icons/hicolor/scalable/apps/{}.svg", name);
+    if std::path::Path::new(&p).exists() { return Some(p); }
+
+    None
+}
+
+
+
+fn icon_base_dirs() -> Vec<String>
+{
+    let mut dirs = Vec::new();
+
+    if let Some(home) = home::home_dir()
+    {
+        dirs.push(home.join(".local/share/icons").to_string_lossy().into_owned());
+        dirs.push(home.join(".local/share/flatpak/exports/share/icons").to_string_lossy().into_owned());
+    }
+
+    if let Ok(xdg) = std::env::var("XDG_DATA_DIRS")
+    {
+        for p in xdg.split(':')
+        {
+            dirs.push(format!("{}/icons", p.trim_end_matches('/')));
+        }
+    }
+
+    dirs.push("/var/lib/flatpak/exports/share/icons".to_string());
+    dirs.push("/usr/share/icons".to_string());
+    dirs.push("/usr/local/share/icons".to_string());
+    dirs.push("/run/host/usr/share/icons".to_string());
+    dirs.push("/run/host/usr/local/share/icons".to_string());
+
+    let mut seen = std::collections::HashSet::new();
+    dirs.retain(|d| seen.insert(d.clone()));
+
+    dirs
+}
+
+
+
+fn discover_themes(bases: &[String]) -> Vec<String>
+{
+    let preferred  = get_icon_theme();
+    let mut themes: Vec<String> = Vec::new();
+
+    if !preferred.is_empty() { themes.push(preferred.clone()); }
+    for base in bases
+    {
+        if let Ok(entries) = std::fs::read_dir(base)
+        {
+            for entry in entries.flatten()
+            {
+                let name  = entry.file_name().to_string_lossy().into_owned();
+                let index = entry.path().join("index.theme");
+                if index.exists() && name != preferred && name != "hicolor"
+                {
+                    themes.push(name);
+                }
+            }
+        }
+    }
+
+    if !themes.contains(&"hicolor".to_string()) { themes.push("hicolor".to_string()); }
+
+    themes
+}
+
+
+
+fn get_icon_theme() -> String
+{
+    if let Some(home) = home::home_dir()
+    {
+        for cfg in &["gtk-4.0/settings.ini", "gtk-3.0/settings.ini"]
+        {
+            let path = home.join(".config").join(cfg);
+            if let Ok(text) = std::fs::read_to_string(path)
+            {
+                for line in text.lines()
+                {
+                    if let Some(v) = line.strip_prefix("gtk-icon-theme-name=")
+                    {
+                        return v.trim().to_string();
+                    }
+                }
+            }
+        }
+    }
+    "hicolor".to_string()
+}
+
+
+
 pub fn load_apps_stream() -> impl futures::Stream<Item = Message>
 {
     async_stream::stream!
@@ -38,8 +220,8 @@ pub fn scan_desktop_files() -> Vec<AppEntry>
         dirs
     };
 
-    let mut entries: Vec<AppEntry> = Vec::new();
-    let mut seen_names = std::collections::HashSet::new();
+    let mut entries:    Vec<AppEntry>                     = Vec::new();
+    let mut seen_names: std::collections::HashSet<String> = std::collections::HashSet::new();
 
     for dir in search_dirs
     {
@@ -48,8 +230,9 @@ pub fn scan_desktop_files() -> Vec<AppEntry>
         {
             let path = file.path();
             if path.extension().and_then(|e| e.to_str()) != Some("desktop") { continue; }
-            if let Some(entry) = parse_desktop_file(&path) && seen_names.insert(entry.name.clone())
+            if let Some(mut entry) = parse_desktop_file(&path) && seen_names.insert(entry.name.clone())
             {
+                entry.icon_path = resolve_icon(&entry.icon);
                 entries.push(entry);
             }
         }
@@ -64,14 +247,15 @@ pub fn scan_desktop_files() -> Vec<AppEntry>
 pub fn parse_desktop_file(path: &PathBuf) -> Option<AppEntry>
 {
     let content = std::fs::read_to_string(path).ok()?;
-    let mut name     = String::new();
-    let mut exec     = String::new();
-    let mut comment  = String::new();
-    let mut icon     = String::new();
+
+    let mut name:     String      = String::new();
+    let mut exec:     String      = String::new();
+    let mut comment:  String      = String::new();
+    let mut icon:     String      = String::new();
     let mut keywords: Vec<String> = Vec::new();
-    let mut terminal     = false;
-    let mut no_display   = false;
-    let mut in_section   = false;
+    let mut terminal   = false;
+    let mut no_display = false;
+    let mut in_section = false;
 
     for line in content.lines()
     {
@@ -88,23 +272,20 @@ pub fn parse_desktop_file(path: &PathBuf) -> Option<AppEntry>
         {
             keywords = v.split(';').map(|s| s.trim().to_lowercase()).filter(|s| !s.is_empty()).collect();
         }
-        if line == "Terminal=true"    { terminal   = true; }
-        if line == "NoDisplay=true"   { no_display = true; }
+        if line == "Terminal=true"  { terminal   = true; }
+        if line == "NoDisplay=true" { no_display = true; }
         if line.starts_with("Type=") && !line.contains("Application") { return None; }
     }
 
     if no_display || name.is_empty() || exec.is_empty() { return None; }
-    Some(AppEntry { name, exec, comment, icon, keywords, terminal })
+    Some(AppEntry { name, exec, comment, icon, icon_path: None, keywords, terminal })
 }
 
 
 
 pub fn sanitize_exec(exec: &str) -> String
 {
-    exec.split_whitespace()
-        .filter(|tok| !tok.starts_with('%'))
-        .collect::<Vec<_>>()
-        .join(" ")
+    exec.split_whitespace().filter(|tok| !tok.starts_with('%')).collect::<Vec<_>>().join(" ")
 }
 
 
@@ -129,8 +310,6 @@ pub fn launch_app(exec: &str, cfg: &LauncherConfig, terminal: bool)
 
 
 
-
-// ============ SEARCH ============
 pub fn filter_entries(entries: &[AppEntry], query: &str, cfg: &LauncherConfig) -> Vec<AppEntry>
 {
     if query.is_empty() { return entries.to_vec(); }
@@ -144,23 +323,37 @@ pub fn filter_entries(entries: &[AppEntry], query: &str, cfg: &LauncherConfig) -
 
     let mut scored: Vec<(usize, AppEntry)> = entries.iter().filter_map(|e|
     {
-        let name     = normalize(&e.name);
-        let comment  = normalize(&e.comment);
-        let exec     = normalize(&e.exec);
+        let name    = normalize(&e.name);
+        let comment = normalize(&e.comment);
+        let exec    = normalize(&e.exec);
 
-        let name_match    = cfg.behaviour.search_name    && name.contains(&q);
-        let comment_match = cfg.behaviour.search_comment && comment.contains(&q);
-        let exec_match    = cfg.behaviour.search_exec    && exec.contains(&q);
+        let name_match    = cfg.behaviour.search_name     && name.contains(&q);
+        let comment_match = cfg.behaviour.search_comment  && comment.contains(&q);
+        let exec_match    = cfg.behaviour.search_exec     && exec.contains(&q);
         let kw_match      = cfg.behaviour.search_keywords && e.keywords.iter().any(|k| normalize(k).contains(&q));
 
         if !(name_match || comment_match || exec_match || kw_match) { return None; }
 
-        // Score: lower = better
-        let score = if name.starts_with(&q)   { 0 }
-                    else if name_match         { 1 }
-                    else if kw_match           { 2 }
-                    else if exec_match         { 3 }
-                    else                       { 4 };
+        let score = if name.starts_with(&q)
+        {
+            0
+        }
+        else if name_match
+        {
+            1
+        }
+        else if kw_match
+        {
+            2
+        }
+        else if exec_match
+        {
+            3
+        }
+        else
+        {
+            4
+        };
 
         Some((score, e.clone()))
     }).collect();
@@ -171,8 +364,6 @@ pub fn filter_entries(entries: &[AppEntry], query: &str, cfg: &LauncherConfig) -
 
 
 
-
-// ============ STYLE HELPERS ============
 pub fn global_style(_app: &AppData, _theme: &Theme) -> iced_layershell::reexport::core::theme::Style
 {
     iced_layershell::reexport::core::theme::Style
@@ -225,16 +416,16 @@ pub fn entry_button_style(status: Status, is_selected: bool, cfg: &LauncherConfi
 pub fn derive_icon_char(name: &str) -> &'static str
 {
     let lower = name.to_lowercase();
-    if lower.contains("terminal")  || lower.contains("alacritty") || lower.contains("kitty")     || lower.contains("foot")     { return "⊞"; }
-    if lower.contains("firefox")   || lower.contains("chromium")  || lower.contains("browser")   || lower.contains("chrome")   { return "🌐"; }
-    if lower.contains("music")     || lower.contains("spotify")   || lower.contains("rhythmbox")  || lower.contains("mpv")     { return "♫"; }
-    if lower.contains("file")      || lower.contains("nautilus")  || lower.contains("dolphin")   || lower.contains("thunar")   { return "📁"; }
-    if lower.contains("text")      || lower.contains("gedit")     || lower.contains("notepad")   || lower.contains("kate")     { return "📝"; }
-    if lower.contains("image")     || lower.contains("photo")     || lower.contains("gimp")      || lower.contains("inkscape") { return "🖼"; }
-    if lower.contains("code")      || lower.contains("vscode")    || lower.contains("vscodium")                                { return "</>"; }
-    if lower.contains("setting")   || lower.contains("control")   || lower.contains("system")                                  { return "⚙"; }
-    if lower.contains("mail")      || lower.contains("thunderbird")|| lower.contains("email")                                  { return "✉"; }
-    if lower.contains("calc")      || lower.contains("math")                                                                   { return "🧮"; }
+    if lower.contains("terminal")    || lower.contains("alacritty")   || lower.contains("kitty")     || lower.contains("foot")     { return "⊞"; }
+    if lower.contains("firefox")     || lower.contains("chromium")    || lower.contains("browser")   || lower.contains("chrome")   { return "🌐"; }
+    if lower.contains("music")       || lower.contains("spotify")     || lower.contains("rhythmbox")  || lower.contains("mpv")     { return "♫"; }
+    if lower.contains("file")        || lower.contains("nautilus")    || lower.contains("dolphin")   || lower.contains("thunar")   { return "📁"; }
+    if lower.contains("text")        || lower.contains("gedit")       || lower.contains("notepad")   || lower.contains("kate")     { return "📝"; }
+    if lower.contains("image")       || lower.contains("photo")       || lower.contains("gimp")      || lower.contains("inkscape") { return "🖼"; }
+    if lower.contains("code")        || lower.contains("vscode")      || lower.contains("vscodium")                                { return "</>"; }
+    if lower.contains("setting")     || lower.contains("control")     || lower.contains("system")                                  { return "⚙"; }
+    if lower.contains("mail")        || lower.contains("thunderbird") || lower.contains("email")                                   { return "✉"; }
+    if lower.contains("calc")        || lower.contains("math")                                                                     { return "🧮"; }
     "▶"
 }
 

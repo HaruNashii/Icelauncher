@@ -32,6 +32,7 @@ pub struct AppEntry
     pub exec:     String,
     pub comment:  String,
     pub icon:     String,
+    pub icon_path: Option<String>,
     pub keywords: Vec<String>,
     pub terminal: bool,
 }
