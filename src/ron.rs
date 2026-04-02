@@ -6,10 +6,6 @@ use std::{fs, io::Write, path::PathBuf};
 
 
 // ============ COLOR TYPE ============
-/// Accepts three formats in the config file:
-///   RGB((255, 255, 255))
-///   RGBA((255, 255, 255, 80))    ← alpha 0-100
-///   HEX("3d3d3d")               ← 6 or 8 hex digits, no '#' required
 #[allow(clippy::upper_case_acronyms)]
 #[derive(Copy, Clone, Debug, PartialEq, Serialize)]
 pub enum ColorType
@@ -104,6 +100,8 @@ pub struct WindowConfig
     pub section_spacing:     u32,
     /// Spacing between individual result entries
     pub entry_spacing:       u32,
+    /// Number of entries per row (1 = classic list, 2+ = grid)
+    pub grid_side_items:     usize,
     /// Corner radius of the outer window panel [top-left, top-right, bottom-left, bottom-right]
     pub border_radius:       [f32; 4],
     /// Border width of the outer window panel
@@ -134,6 +132,7 @@ impl Default for WindowConfig
             padding:          14,
             section_spacing:  0,
             entry_spacing:    3,
+            grid_side_items:  1,
             border_radius:    [10.0, 10.0, 10.0, 10.0],
             border_width:     1.0,
             border_color:     ColorType::HEX(*b"3d3d3d\0\0\0"),
@@ -495,6 +494,7 @@ LauncherConfig
         padding:            14,
         section_spacing:    0,
         entry_spacing:      3,
+        grid_side_items:    1,         // 1 = list, 2+ = grid
 
         border_radius:      (10.0, 10.0, 10.0, 10.0),
         border_width:       1.0,

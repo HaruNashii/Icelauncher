@@ -56,6 +56,8 @@ pub enum Message
     Launch(String),
     SelectUp,
     SelectDown,
+    SelectLeft,
+    SelectRight,
     Close,
     Nothing,
 }
@@ -68,28 +70,22 @@ pub enum Message
 pub async fn main() -> Result<(), iced_layershell::Error>
 {
     let config = load_config();
-
     let w = config.window.width;
     let h = config.window.height;
-
     let init_data = AppData { loading: true, config, ..Default::default() };
 
-    application(move || init_data.clone(), namespace, update, view)
-        .subscription(subscription)
-        .style(global_style)
-        .settings(Settings
+    application(move || init_data.clone(), namespace, update, view).subscription(subscription).style(global_style).settings(Settings
+    {
+        layer_settings: LayerShellSettings
         {
-            layer_settings: LayerShellSettings
-            {
-                size:                   Some((w, h)),
-                anchor:                 Anchor::empty(),
-                layer:                  Layer::Overlay,
-                keyboard_interactivity: KeyboardInteractivity::Exclusive,
-                ..Default::default()
-            },
+            size:                   Some((w, h)),
+            anchor:                 Anchor::empty(),
+            layer:                  Layer::Overlay,
+            keyboard_interactivity: KeyboardInteractivity::Exclusive,
             ..Default::default()
-        })
-        .run()
+        },
+        ..Default::default()
+    }).run()
 }
 
 fn namespace() -> String { "icelauncher".into() }

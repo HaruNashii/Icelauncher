@@ -31,11 +31,7 @@ pub fn view(app: &AppData) -> Element<'_, Message>
     let search_input = text_input(&sc.placeholder, &app.query)
         .id("search_input")
         .on_input(Message::QueryChanged)
-        .on_submit(
-            app.filtered.first()
-                .map(|e| Message::Launch(e.exec.clone()))
-                .unwrap_or(Message::Nothing),
-        )
+        .on_submit(app.filtered.get(app.selected).map(|e| Message::Launch(e.exec.clone())).unwrap_or(Message::Nothing))
         .size(sc.text_size)
         .padding(sc.input_padding as f32)
         .style(move |_theme, _status| iced::widget::text_input::Style
@@ -149,9 +145,23 @@ pub fn view(app: &AppData) -> Element<'_, Message>
             })
             .collect();
 
-        scrollable(column(items).spacing(wc.entry_spacing))
-            .height(Length::Fill)
-            .into()
+        let cols = wc.grid_side_items.max(1);
+        let mut items_iter = items.into_iter();
+        let mut grid_rows: Vec<Element<Message>> = Vec::new();
+        
+        loop 
+        {
+            let chunk: Vec<Element<Message>> = items_iter.by_ref().take(cols).collect();
+            if chunk.is_empty() { break; }
+            let mut cells: Vec<Element<Message>> = chunk.into_iter().map(|cell| container(cell).width(Length::Fill).into()).collect();
+            while cells.len() < cols 
+            {
+                cells.push(Space::new().width(Length::Fill).into());
+            }
+            grid_rows.push(row(cells).spacing(wc.entry_spacing).into());
+        }
+
+        scrollable(column(grid_rows).spacing(wc.entry_spacing)).height(Length::Fill).into()
     };
 
 

@@ -23,6 +23,8 @@ pub fn subscription(_app: &AppData) -> iced::Subscription<Message>
                 Key::Named(Named::Escape)    => Some(Message::Close),
                 Key::Named(Named::ArrowUp)   => Some(Message::SelectUp),
                 Key::Named(Named::ArrowDown) => Some(Message::SelectDown),
+                Key::Named(Named::ArrowLeft)   => Some(Message::SelectLeft),
+                Key::Named(Named::ArrowRight) => Some(Message::SelectRight),
                 _ => None,
             },
             _ => None,
