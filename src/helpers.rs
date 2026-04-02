@@ -61,7 +61,7 @@ pub fn resolve_icon(icon: &str) -> Option<String>
                 if std::path::Path::new(&p).exists() { return Some(p); }
             }
 
-            for sz in ["128", "96", "72", "64", "48", "36", "32", "24", "22", "16"]
+            for sz in ["512", "256", "128", "96", "72", "64", "48", "36", "32", "24", "22", "16"]
             {
                 for ext in ["svg", "png"]
                 {
