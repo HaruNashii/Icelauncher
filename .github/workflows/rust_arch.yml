@@ -33,7 +33,7 @@ jobs:
         with:
           version: latest
           mirror: https://geo.mirror.pkgbuild.com
-          packages: "pkg-config base-devel alsa-lib cmake gcc gcc-libs hidapi ibus jack libdecor libgl libpulse libusb libx11 libxcursor libxext libxinerama libxkbcommon libxrandr libxrender libxss libxtst mesa ninja pipewire sndio vulkan-driver vulkan-headers wayland wayland-protocols"
+          packages: "pkg-config base-devel alsa-lib cmake gcc gcc-libs hidapi ibus jack libdecor libgl libpulse libusb libx11 libxcursor libxext libxinerama libxkbcommon libxrandr libxrender libxss libxtst mesa ninja pipewire sndio vulkan-driver vulkan-headers wayland wayland-protocols wl-clipboard"
 
       - name: Build (stable)
         shell: arch.sh {0}

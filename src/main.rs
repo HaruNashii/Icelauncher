@@ -39,10 +39,9 @@ pub struct AppEntry
     pub terminal: bool,
 }
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct AppData
 {
-    pub wl_copy_child:  Option<std::process::Child>,
     pub query:          String,
     pub entries:        Vec<AppEntry>,
     pub filtered:       Vec<AppEntry>,
@@ -53,27 +52,6 @@ pub struct AppData
     pub viewport_h:     f32,  // real visible height of the scrollable
     pub content_h:      f32,  // real total content height
     pub copy_feedback:  bool, // true while the "copied" toast is visible
-}
-
-impl Clone for AppData 
-{
-    fn clone(&self) -> Self 
-    {
-        Self 
-        {
-            wl_copy_child:  None,
-            query:          self.query.clone(),
-            entries:        self.entries.clone(),
-            filtered:       self.filtered.clone(),
-            selected:       self.selected,
-            loading:        self.loading,
-            config:         self.config.clone(),
-            scroll_offset:  self.scroll_offset,
-            viewport_h:     self.viewport_h,
-            content_h:      self.content_h,
-            copy_feedback:  self.copy_feedback,
-        }
-    }
 }
 
 #[to_layer_message]

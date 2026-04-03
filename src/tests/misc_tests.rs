@@ -415,70 +415,6 @@ fn zero_columns_does_not_break_navigation()
 
 // ── CopyToClipboard ───────────────────────────────────────────────────────────
 #[test]
-fn copy_to_clipboard_kills_previous_wl_copy_child()
-{
-    let mut app = AppData::default();
-
-    let child = std::process::Command::new("sleep")
-        .arg("60")
-        .stdin(std::process::Stdio::null())
-        .stdout(std::process::Stdio::null())
-        .stderr(std::process::Stdio::null())
-        .spawn()
-        .expect("failed to spawn sleep");
-
-    let pid = child.id();
-    app.wl_copy_child = Some(child);
-
-    let _ = update(&mut app, Message::CopyToClipboard("test".to_string()));
-
-    // Give the OS a moment to reap the process
-    std::thread::sleep(std::time::Duration::from_millis(100));
-
-    let still_running = std::path::Path::new(&format!("/proc/{}", pid)).exists();
-    assert!(!still_running, "previous wl-copy child was not killed");
-}
-
-#[test]
-fn copy_to_clipboard_spam_kills_each_previous_child()
-{
-    let mut app = AppData::default();
-    let mut pids: Vec<u32> = Vec::new();
-
-    for i in 0..5
-    {
-        // Manually inject a sleep child as if it were the previous wl-copy
-        let child = std::process::Command::new("sleep")
-            .arg("60")
-            .stdin(std::process::Stdio::null())
-            .stdout(std::process::Stdio::null())
-            .stderr(std::process::Stdio::null())
-            .spawn()
-            .expect("failed to spawn sleep");
-
-        pids.push(child.id());
-        app.wl_copy_child = Some(child);
-
-        let _ = update(&mut app, Message::CopyToClipboard(format!("value{}", i)));
-    }
-
-    // All previously injected sleep processes should be dead
-    for pid in &pids
-    {
-        let status_path = format!("/proc/{}/status", pid);
-        if let Ok(contents) = std::fs::read_to_string(&status_path)
-        {
-            let is_zombie = contents.lines()
-                .find(|l| l.starts_with("State:"))
-                .map(|l| l.contains('Z'))
-                .unwrap_or(false);
-            assert!(!is_zombie, "pid {} is a zombie after spam", pid);
-        }
-        // /proc entry gone entirely = cleanly reaped = pass
-    }
-}
-
-#[test]
 fn copy_to_clipboard_sets_feedback_flag()
 {
     let mut app = AppData::default();
@@ -498,86 +434,10 @@ fn copied_feedback_clear_unsets_feedback_flag()
 }
 
 #[test]
-fn copy_to_clipboard_stores_new_child()
-{
-    let mut app = AppData::default();
-    assert!(app.wl_copy_child.is_none());
-
-    let _ = update(&mut app, Message::CopyToClipboard("42".to_string()));
-
-    assert!(app.wl_copy_child.is_some(), "new wl-copy child was not stored");
-}
-
-#[test]
-fn copy_to_clipboard_no_zombie_after_kill()
-{
-    let mut app = AppData::default();
-
-    let child = std::process::Command::new("sleep")
-        .arg("60")
-        .stdin(std::process::Stdio::null())
-        .stdout(std::process::Stdio::null())
-        .stderr(std::process::Stdio::null())
-        .spawn()
-        .expect("failed to spawn sleep");
-
-    let pid = child.id();
-    app.wl_copy_child = Some(child);
-
-    let _ = update(&mut app, Message::CopyToClipboard("test".to_string()));
-
-    // A zombie shows up in /proc/{pid}/status as "Z (zombie)"
-    let status_path = format!("/proc/{}/status", pid);
-    if let Ok(contents) = std::fs::read_to_string(&status_path)
-    {
-        let is_zombie = contents.lines()
-            .find(|l| l.starts_with("State:"))
-            .map(|l| l.contains('Z'))
-            .unwrap_or(false);
-
-        assert!(!is_zombie, "killed child is a zombie — wait() was not called");
-    }
-    // if /proc entry is already gone, that's even better — pass
-}
-
-#[test]
-fn copy_to_clipboard_with_empty_string_still_stores_child()
-{
-    let mut app = AppData::default();
-    let _ = update(&mut app, Message::CopyToClipboard("".to_string()));
-    assert!(app.wl_copy_child.is_some(), "child should be stored even for empty string");
-}
-
-#[test]
-fn copy_to_clipboard_with_no_previous_child_does_not_panic()
-{
-    let mut app = AppData::default();
-    assert!(app.wl_copy_child.is_none());
-    // should not panic when there is nothing to kill
-    let _ = update(&mut app, Message::CopyToClipboard("safe".to_string()));
-}
-
-#[test]
 fn copy_feedback_is_false_after_clear_even_if_no_copy_happened()
 {
     let mut app = AppData::default();
     app.copy_feedback = false;
     let _ = update(&mut app, Message::CopiedFeedbackClear);
     assert!(!app.copy_feedback);
-}
-
-#[test]
-fn copy_to_clipboard_replaces_child_on_second_call()
-{
-    let mut app = AppData::default();
-
-    let _ = update(&mut app, Message::CopyToClipboard("first".to_string()));
-    let first_pid = app.wl_copy_child.as_ref().map(|c| c.id());
-
-    let _ = update(&mut app, Message::CopyToClipboard("second".to_string()));
-    let second_pid = app.wl_copy_child.as_ref().map(|c| c.id());
-
-    assert!(first_pid.is_some());
-    assert!(second_pid.is_some());
-    assert_ne!(first_pid, second_pid, "child PID should change after second copy");
 }
