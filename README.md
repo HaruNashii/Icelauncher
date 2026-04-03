@@ -172,7 +172,7 @@ src/
 ├── update.rs        → iced message handler
 ├── view.rs          → iced renderer
 ├── ron.rs           → RON config structs + loader
-├── helpers.rs       → app scanning, icon resolution, search, style helpers
+├── helpers/*.rs     → app scanning, icon resolution, search, style helpers
 ```
 
 ### Key Systems

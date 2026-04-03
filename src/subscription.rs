@@ -5,7 +5,7 @@ use iced::{event, keyboard::{self, Key, key::Named}};
 
 
 // ============ CRATES ============
-use crate::helpers::load_apps_stream;
+use crate::helpers::desktop::load_apps_stream;
 use crate::{AppData, Message};
 
 

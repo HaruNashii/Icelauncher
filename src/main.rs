@@ -7,7 +7,7 @@ use iced_layershell::{application, reexport::{Anchor, KeyboardInteractivity, Lay
 // ============ CRATES ============
 use crate::ron::{LauncherConfig, load_config};
 use crate::subscription::subscription;
-use crate::helpers::global_style;
+use crate::helpers::style::global_style;
 use crate::update::update;
 use crate::view::view;
 
@@ -18,6 +18,8 @@ use crate::view::view;
 mod subscription;
 mod helpers;
 mod update;
+mod tests;
+mod color;
 mod view;
 mod ron;
 

@@ -4,9 +4,11 @@ use iced::{Task, widget::{Id, operation, scrollable, operation::focus}};
 
 
 
+
 // ============ CRATES ============
+use crate::helpers::{launch::{filter_entries, launch_app}, scroll::scroll_to_selected};
 use crate::{AppData, Message};
-use crate::helpers::{filter_entries, launch_app, scroll_to_selected};
+
 
 
 
@@ -23,12 +25,10 @@ pub fn update(app: &mut AppData, message: Message) -> Task<Message>
             app.entries       = entries;
             app.selected      = 0;
             app.scroll_offset = 0.0;
-            return Task::batch(vec![
+            return Task::batch(vec!
+            [
                 focus("search_input"),
-                operation::snap_to(
-                    Id::new("results_scroll"),
-                    scrollable::RelativeOffset { x: 0.0, y: 0.0 },
-                ),
+                operation::snap_to(Id::new("results_scroll"), scrollable::RelativeOffset { x: 0.0, y: 0.0 })
             ]);
         }
 
@@ -55,31 +55,20 @@ pub fn update(app: &mut AppData, message: Message) -> Task<Message>
             {
                 let cols = app.config.window.grid_side_items.max(1);
                 let max  = app.filtered.len().min(app.config.window.max_results);
-                if app.selected < cols
-                {
-                    // Already on the first row — wrap to last row, same column
-                    let col      = app.selected % cols;
-                    let last_row = (max - 1) / cols;
-                    let target   = last_row * cols + col;
-                    app.selected = target.min(max - 1);
-                }
-                else { app.selected -= cols; }
+                if max == 0 { return Task::none(); }
+                app.selected = (app.selected + max - (cols % max)) % max;
                 return scroll_to_selected(app);
             }
         }
-        
+
         Message::SelectDown =>
         {
             if !app.filtered.is_empty()
             {
                 let cols = app.config.window.grid_side_items.max(1);
                 let max  = app.filtered.len().min(app.config.window.max_results);
-                let next = app.selected + cols;
-                if next >= max
-                {
-                    app.selected %= cols;
-                }
-                else { app.selected = next; }
+                if max == 0 { return Task::none(); }
+                app.selected = (app.selected + cols) % max;
                 return scroll_to_selected(app);
             }
         }
@@ -88,19 +77,20 @@ pub fn update(app: &mut AppData, message: Message) -> Task<Message>
         {
             if !app.filtered.is_empty()
             {
-                if app.selected == 0 { app.selected = app.filtered.len().min(app.config.window.max_results) - 1; }
-                else { app.selected -= 1; }
+                let max = app.filtered.len().min(app.config.window.max_results).max(1);
+                if max == 0 { return Task::none(); }
+                app.selected = (app.selected + max - 1) % max;
                 return scroll_to_selected(app);
             }
         }
-        
+
         Message::SelectRight =>
         {
             if !app.filtered.is_empty()
             {
-                let max = app.filtered.len().min(app.config.window.max_results) - 1;
-                if app.selected >= max { app.selected = 0; }
-                else { app.selected += 1; }
+                let max = app.filtered.len().min(app.config.window.max_results).max(1);
+                if max == 0 { return Task::none(); }
+                app.selected = (app.selected + 1) % max;
                 return scroll_to_selected(app);
             }
         }
@@ -109,10 +99,10 @@ pub fn update(app: &mut AppData, message: Message) -> Task<Message>
         {
             let terminal = app.filtered.iter().find(|e| e.exec == exec).map(|e| e.terminal).unwrap_or(false);
             launch_app(&exec, &app.config, terminal);
-            if app.config.behaviour.close_on_launch { std::process::exit(0); }
+            if app.config.behaviour.close_on_launch { return iced::exit(); }
         }
 
-        Message::Close => { std::process::exit(0); }
+        Message::Close => { return iced::exit(); }
 
         _ => {}
     }
