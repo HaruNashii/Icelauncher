@@ -51,6 +51,24 @@ fn sanitize_exec_extra_whitespace_normalized()
     assert_eq!(sanitize_exec("app   arg"), "app arg");
 }
 
+#[test]
+fn sanitize_exec_preserves_quoted_argument_as_single_token()
+{
+    assert_eq!(sanitize_exec("app --title \"My App\""), "app --title My App");
+}
+
+#[test]
+fn sanitize_exec_single_quotes_work()
+{
+    assert_eq!(sanitize_exec("app --title 'My App'"), "app --title My App");
+}
+
+#[test]
+fn sanitize_exec_percent_inside_quotes_stripped()
+{
+    assert_eq!(sanitize_exec("app \"%u\""), "app");
+}
+
 // ── parse_desktop_file ───────────────────────────────────────────────────────
 
 fn write_desktop(content: &str) -> NamedTempFile

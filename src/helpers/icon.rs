@@ -5,7 +5,7 @@ use std::path::Path;
 
 
 // ============ FUNCTIONS ============
-pub fn resolve_icon(icon: &str) -> Option<String>
+pub fn resolve_icon_with(icon: &str, bases: &[String], themes: &[String]) -> Option<String>
 {
     if icon.is_empty() { return None; }
     if icon.starts_with('/')
@@ -14,20 +14,16 @@ pub fn resolve_icon(icon: &str) -> Option<String>
         return None;
     }
 
-    let name = icon.strip_suffix(".png").or_else(|| icon.strip_suffix(".svg")).or_else(|| icon.strip_suffix(".xpm")).unwrap_or(icon);
-    let bases  = icon_base_dirs();
-    let themes = discover_themes(&bases);
+    let name = icon.strip_suffix(".png")
+        .or_else(|| icon.strip_suffix(".svg"))
+        .or_else(|| icon.strip_suffix(".xpm"))
+        .unwrap_or(icon);
 
-    for base in &bases
+    for base in bases
     {
-        for theme in &themes
+        for theme in themes
         {
             let theme_root = format!("{}/{}", base, theme);
-            for ext in ["svg", "png"]
-            {
-                let p = format!("{}/{}.{}", theme_root, name, ext);
-                if Path::new(&p).exists() { return Some(p); }
-            }
 
             let standard_sizes =
             [
@@ -96,7 +92,7 @@ pub fn resolve_icon(icon: &str) -> Option<String>
 
 
 
-fn icon_base_dirs() -> Vec<String>
+pub fn icon_base_dirs() -> Vec<String>
 {
     let mut dirs = Vec::new();
 
@@ -128,7 +124,7 @@ fn icon_base_dirs() -> Vec<String>
 
 
 
-fn discover_themes(bases: &[String]) -> Vec<String>
+pub fn discover_themes(bases: &[String]) -> Vec<String>
 {
     let preferred  = get_icon_theme();
     let mut themes: Vec<String> = Vec::new();
@@ -142,15 +138,17 @@ fn discover_themes(bases: &[String]) -> Vec<String>
             {
                 let name  = entry.file_name().to_string_lossy().into_owned();
                 let index = entry.path().join("index.theme");
-                if index.exists() && name != preferred && name != "hicolor"
-                {
-                    themes.push(name);
+                if index.exists() && name != preferred && name != "hicolor" && !themes.contains(&name) 
+                { 
+                    themes.push(name); 
                 }
             }
         }
     }
 
     if !themes.contains(&"hicolor".to_string()) { themes.push("hicolor".to_string()); }
+
+    println!("[icelauncher] Themes found: {:?}", themes);
 
     themes
 }
@@ -170,12 +168,52 @@ fn get_icon_theme() -> String
                 {
                     if let Some(v) = line.strip_prefix("gtk-icon-theme-name=")
                     {
-                        return v.trim().to_string();
+                        let theme = v.trim().to_string();
+                        println!("[icelauncher] Theme selected: {} (from GTK)", theme);
+                        return theme;
                     }
                 }
             }
         }
+
+        let kdeglobals = home.join(".config/kdeglobals");
+        if let Ok(text) = std::fs::read_to_string(kdeglobals)
+        {
+            let mut in_icons = false;
+            for line in text.lines()
+            {
+                if line.trim() == "[Icons]" { in_icons = true;  continue; }
+                if line.starts_with('[')    { in_icons = false; continue; }
+                if in_icons && let Some(v) = line.strip_prefix("Theme=")
+                {
+                    let theme = v.trim().to_string();
+                    println!("[icelauncher] Theme selected: {} (from KDE)", theme);
+                    return theme;
+                }
+            }
+        }
+
+        let xsettings = home.join(".config/xfce4/xfconf/xfce-perchannel-xml/xsettings.xml");
+        if let Ok(text) = std::fs::read_to_string(xsettings)
+        {
+            for line in text.lines()
+            {
+                let line = line.trim();
+                if line.contains("\"Net/IconThemeName\"") && let Some(start) = line.find("value=\"")
+                {
+                        let rest = &line[start + 7..];
+                        if let Some(end) = rest.find('"')
+                        {
+                            let theme = rest[..end].to_string();
+                            println!("[icelauncher] Theme selected: {} (from XFCE)", theme);
+                            return theme;
+                        }
+                }
+            }
+        }
     }
+
+    println!("[icelauncher] Theme selected: hicolor (fallback)");
     "hicolor".to_string()
 }
 

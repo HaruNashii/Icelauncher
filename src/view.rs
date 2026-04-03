@@ -27,7 +27,17 @@ pub fn view(app: &AppData) -> Element<'_, Message>
 
     // ── Search bar ───────────────────────────────────────────────────────────
     let sr = sc.border_radius;
-    let search_input = text_input(&sc.placeholder, &app.query).id("search_input").on_input(Message::QueryChanged).on_submit(app.filtered.get(app.selected).map(|e| Message::Launch(e.exec.clone())).unwrap_or(Message::Nothing)).size(sc.text_size).padding(sc.input_padding as f32)
+    let search_input = text_input(&sc.placeholder, &app.query).id("search_input").on_input(Message::QueryChanged)
+    .on_submit
+    ({
+        match app.filtered.get(app.selected) 
+        {
+            Some(e) if e.exec.is_empty() => Message::CopyToClipboard(e.name.trim_start_matches("= ").to_string()),
+            Some(e) => Message::Launch(e.exec.clone()),
+            None    => Message::Nothing,
+        }
+    })
+    .size(sc.text_size).padding(sc.input_padding as f32)
     .style(move |_theme, _status| iced::widget::text_input::Style
     {
         background:  iced::Background::Color(sc.background_color.to_iced()),
@@ -69,7 +79,15 @@ pub fn view(app: &AppData) -> Element<'_, Message>
         let transparent_input = text_input("", &app.query)
             .id("search_input")
             .on_input(Message::QueryChanged)
-            .on_submit(app.filtered.get(app.selected).map(|e| Message::Launch(e.exec.clone())).unwrap_or(Message::Nothing))
+            .on_submit
+            ({
+                match app.filtered.get(app.selected) 
+                {
+                    Some(e) if e.exec.is_empty() => Message::CopyToClipboard(e.name.trim_start_matches("= ").to_string()),
+                    Some(e) => Message::Launch(e.exec.clone()),
+                    None    => Message::Nothing,
+                }
+            })
             .size(sc.text_size)
             .padding(0)
             .style(|_theme, _status| iced::widget::text_input::Style
@@ -230,14 +248,10 @@ pub fn view(app: &AppData) -> Element<'_, Message>
             let label = column![name_el, comment_el].spacing(2);
 
             // For calc entries, optionally show the feedback text on the right
-            let row_content: Element<Message> = if is_calc && app.copy_feedback
+            let row_content: Element<Message> = if is_calc && is_selected && app.copy_feedback
             {
-                let feedback_el = text(&cfg.behaviour.copy_feedback_text)
-                    .size(ec.comment_size)
-                    .color(sc.border_color.to_iced()); // use accent color
-                row![icon_el, gap_el, label, Space::new().width(Length::Fill), feedback_el]
-                    .align_y(Alignment::Center)
-                    .into()
+                let feedback_el = text(&cfg.behaviour.copy_feedback_text).size(ec.comment_size).color(sc.border_color.to_iced()); // use accent color
+                row![icon_el, gap_el, label, Space::new().width(Length::Fill), feedback_el].align_y(Alignment::Center).into()
             }
             else
             {

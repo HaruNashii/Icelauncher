@@ -4,8 +4,9 @@ use std::process::Command as StdCommand;
 
 
 // ============ CRATES ============
-use crate::AppEntry;
+use crate::helpers::desktop::tokenize;
 use crate::ron::LauncherConfig;
+use crate::AppEntry;
 
 
 
@@ -21,8 +22,8 @@ pub fn launch_app(exec: &str, cfg: &LauncherConfig, terminal: bool)
         exec.to_string()
     };
 
-    let parts: Vec<&str> = full_cmd.split_whitespace().collect();
-    if let Some((prog, args)) = parts.split_first()
+    let tokens = tokenize(&full_cmd);
+    if let Some((prog, args)) = tokens.split_first()
     {
         let _ = StdCommand::new(prog).args(args).stdin(std::process::Stdio::null()).stdout(std::process::Stdio::null()).stderr(std::process::Stdio::null()).spawn();
     }
@@ -32,22 +33,23 @@ pub fn launch_app(exec: &str, cfg: &LauncherConfig, terminal: bool)
 
 fn try_evaluate(expr: &str) -> Option<String>
 {
-    // Must contain at least one operator to avoid showing a result for every
-    // plain word the user types.
-    let has_operator = expr.contains(['+', '-', '*', '/', '%', '^', '(', ')']);
-    if !has_operator { return None; }
+    let has_operator = expr.contains(['+', '*', '/', '%', '^', '(', ')']);
+    let has_minus = 
+    {
+        let trimmed: Vec<char> = expr.chars().filter(|c| !c.is_whitespace()).collect();
+        trimmed.windows(2).any(|w| w[1] == '-' && (w[0].is_ascii_digit() || w[0] == ')'))
+    };
+    if !has_operator && !has_minus { return None; }
 
     let mut ns = fasteval::EmptyNamespace;
     let result = fasteval::ez_eval(expr, &mut ns).ok()?;
 
-    // Format: drop the decimal part when the result is a whole number.
     if result.fract() == 0.0 && result.abs() < 1e15
     {
         Some(format!("{}", result as i64))
     }
     else
     {
-        // Up to 10 significant digits, strip trailing zeros.
         let s = format!("{:.10}", result);
         Some(s.trim_end_matches('0').trim_end_matches('.').to_string())
     }

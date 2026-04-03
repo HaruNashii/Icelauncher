@@ -1,12 +1,11 @@
 // ============ IMPORTS ============
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 
 
 
 // ============ CRATES ============
 use crate::{AppEntry, Message};
-use crate::helpers::icon::resolve_icon;
 
 
 
@@ -16,7 +15,7 @@ pub fn load_apps_stream() -> impl futures::Stream<Item = Message>
 {
     async_stream::stream!
     {
-        let entries = tokio::task::spawn_blocking(scan_desktop_files).await.unwrap_or_default();
+        let entries = tokio::task::spawn_blocking(scan_desktop_files).await.unwrap_or_else(|e| { eprintln!("[icelauncher] Failed to scan desktop files: {e}"); vec![] });
         yield Message::EntriesLoaded(entries);
     }
 }
@@ -40,6 +39,9 @@ pub fn scan_desktop_files() -> Vec<AppEntry>
         dirs
     };
 
+    let icon_bases  = crate::helpers::icon::icon_base_dirs();
+    let icon_themes = crate::helpers::icon::discover_themes(&icon_bases);
+
     let mut entries:    Vec<AppEntry>                     = Vec::new();
     let mut seen_names: std::collections::HashSet<String> = std::collections::HashSet::new();
 
@@ -50,9 +52,10 @@ pub fn scan_desktop_files() -> Vec<AppEntry>
         {
             let path = file.path();
             if path.extension().and_then(|e| e.to_str()) != Some("desktop") { continue; }
-            if let Some(mut entry) = parse_desktop_file(&path) && seen_names.insert(entry.name.clone())
+            let stem = path.file_stem().and_then(|s| s.to_str()).unwrap_or("").to_string();
+            if let Some(mut entry) = parse_desktop_file(&path) && seen_names.insert(stem)
             {
-                entry.icon_path = resolve_icon(&entry.icon);
+                entry.icon_path = crate::helpers::icon::resolve_icon_with(&entry.icon, &icon_bases, &icon_themes);
                 entries.push(entry);
             }
         }
@@ -63,8 +66,7 @@ pub fn scan_desktop_files() -> Vec<AppEntry>
 }
 
 
-
-pub fn parse_desktop_file(path: &PathBuf) -> Option<AppEntry>
+pub fn parse_desktop_file(path: &Path) -> Option<AppEntry>
 {
     let content = std::fs::read_to_string(path).ok()?;
 
@@ -103,7 +105,44 @@ pub fn parse_desktop_file(path: &PathBuf) -> Option<AppEntry>
 
 
 
+pub fn tokenize(s: &str) -> Vec<String>
+{
+    let mut tokens:     Vec<String> = Vec::new();
+    let mut current                 = String::new();
+    let mut in_quotes               = false;
+    let mut quote_char              = ' ';
+
+    for ch in s.chars()
+    {
+        match ch
+        {
+            '"' | '\'' if !in_quotes =>
+            {
+                in_quotes  = true;
+                quote_char = ch;
+            }
+            c if in_quotes && c == quote_char =>
+            {
+                in_quotes = false;
+            }
+            ' ' if !in_quotes =>
+            {
+                if !current.is_empty()
+                {
+                    tokens.push(current.clone());
+                    current.clear();
+                }
+            }
+            _ => current.push(ch),
+        }
+    }
+    if !current.is_empty() { tokens.push(current); }
+    tokens
+}
+
+
+
 pub fn sanitize_exec(exec: &str) -> String
 {
-    exec.split_whitespace().filter(|tok| !tok.starts_with('%')).collect::<Vec<_>>().join(" ")
+    tokenize(exec).into_iter().filter(|tok| !tok.starts_with('%')).collect::<Vec<_>>().join(" ")
 }

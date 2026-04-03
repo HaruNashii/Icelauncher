@@ -1,6 +1,6 @@
 use tempfile::{tempdir, NamedTempFile};
 
-use crate::helpers::icon::resolve_icon;
+use crate::helpers::icon::{resolve_icon_with, icon_base_dirs, discover_themes};
 use crate::ron::{LauncherConfig, config_path, load_config};
 use crate::{update, Message, AppData, AppEntry};
 
@@ -42,16 +42,19 @@ pub fn make_app_with_entries(entries: Vec<AppEntry>, cols: usize, max: usize) ->
 #[test]
 fn resolve_icon_empty_string_returns_none()
 {
-    assert!(resolve_icon("").is_none());
+    let bases  = icon_base_dirs();
+    let themes = discover_themes(&bases);
+    assert!(resolve_icon_with("", &bases, &themes).is_none());
 }
 
 #[test]
 fn resolve_icon_absolute_path_existing_returns_some()
 {
-    // Create a real temp file and pass its absolute path
-    let f = NamedTempFile::new().unwrap();
-    let path = f.path().to_str().unwrap().to_string();
-    let result = resolve_icon(&path);
+    let bases  = icon_base_dirs();
+    let themes = discover_themes(&bases);
+    let f      = NamedTempFile::new().unwrap();
+    let path   = f.path().to_str().unwrap().to_string();
+    let result = resolve_icon_with(&path, &bases, &themes);
     assert!(result.is_some());
     assert_eq!(result.unwrap(), path);
 }
@@ -59,38 +62,44 @@ fn resolve_icon_absolute_path_existing_returns_some()
 #[test]
 fn resolve_icon_absolute_path_missing_returns_none()
 {
-    let result = resolve_icon("/nonexistent/path/to/icon.png");
+    let bases  = icon_base_dirs();
+    let themes = discover_themes(&bases);
+    let result = resolve_icon_with("/nonexistent/path/to/icon.png", &bases, &themes);
     assert!(result.is_none());
 }
 
 #[test]
 fn resolve_icon_strips_png_suffix_before_searching()
 {
-    // Passing "icon.png" should internally strip ".png" → searches for "icon"
-    // We can't assert it finds something in CI, but it must not panic
-    let _ = resolve_icon("icon.png");
+    let bases  = icon_base_dirs();
+    let themes = discover_themes(&bases);
+    let _ = resolve_icon_with("icon.png", &bases, &themes);
 }
 
 #[test]
 fn resolve_icon_strips_svg_suffix_before_searching()
 {
-    let _ = resolve_icon("icon.svg");
+    let bases  = icon_base_dirs();
+    let themes = discover_themes(&bases);
+    let _ = resolve_icon_with("icon.svg", &bases, &themes);
 }
 
 #[test]
 fn resolve_icon_strips_xpm_suffix_before_searching()
 {
-    let _ = resolve_icon("icon.xpm");
+    let bases  = icon_base_dirs();
+    let themes = discover_themes(&bases);
+    let _ = resolve_icon_with("icon.xpm", &bases, &themes);
 }
 
 #[test]
 fn resolve_icon_unknown_name_returns_none()
 {
-    // A name that surely doesn't exist on any system
-    let result = resolve_icon("__icelauncher_test_nonexistent_icon_xyzzy__");
+    let bases  = icon_base_dirs();
+    let themes = discover_themes(&bases);
+    let result = resolve_icon_with("__icelauncher_test_nonexistent_icon_xyzzy__", &bases, &themes);
     assert!(result.is_none());
 }
-
 
 
 

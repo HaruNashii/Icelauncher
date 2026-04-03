@@ -52,6 +52,7 @@ pub fn scroll_to_selected(app: &mut AppData) -> Task<Message>
     let computed_content_h = cursor;
 
     let sel_row   = app.selected / cols;
+    if sel_row >= row_tops.len() { return Task::none(); }
     let row_h_sel =
     {
         let start = sel_row * cols;
