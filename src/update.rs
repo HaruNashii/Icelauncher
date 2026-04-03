@@ -56,7 +56,17 @@ pub fn update(app: &mut AppData, message: Message) -> Task<Message>
                 let cols = app.config.window.grid_side_items.max(1);
                 let max  = app.filtered.len().min(app.config.window.max_results);
                 if max == 0 { return Task::none(); }
-                app.selected = (app.selected + max - (cols % max)) % max;
+                let row_offset = app.selected / cols;
+                let col_offset = app.selected % cols;
+                let new_row = if row_offset == 0 
+                { 
+                    (max - 1) / cols 
+                } 
+                else 
+                { 
+                    row_offset - 1 
+                };
+                app.selected = (new_row * cols + col_offset).min(max - 1);
                 return scroll_to_selected(app);
             }
         }
