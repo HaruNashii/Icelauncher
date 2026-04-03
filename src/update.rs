@@ -16,6 +16,12 @@ use crate::{AppData, Message};
 // ============ FUNCTIONS ============
 pub fn update(app: &mut AppData, message: Message) -> Task<Message>
 {
+    if let Some(mut prev) = app.wl_copy_child.take() 
+    {
+        let _ = prev.kill();
+        let _ = prev.wait();
+    }
+
     match message
     {
         Message::EntriesLoaded(entries) =>
@@ -109,11 +115,6 @@ pub fn update(app: &mut AppData, message: Message) -> Task<Message>
         {
             app.copy_feedback = true;
             let secs = app.config.behaviour.copy_feedback_seconds;
-            if let Some(mut prev) = app.wl_copy_child.take() 
-            {
-                let _ = prev.kill();
-                let _ = prev.wait();
-            }
             app.wl_copy_child = std::process::Command::new("wl-copy").arg(&value).stdin(std::process::Stdio::null()).stdout(std::process::Stdio::null()).stderr(std::process::Stdio::null()).spawn().ok();
             return Task::perform
             (
