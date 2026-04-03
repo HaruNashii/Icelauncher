@@ -250,7 +250,16 @@ pub fn view(app: &AppData) -> Element<'_, Message>
             // For calc entries, optionally show the feedback text on the right
             let row_content: Element<Message> = if is_calc && is_selected && app.copy_feedback
             {
-                let feedback_el = text(&cfg.behaviour.copy_feedback_text).size(ec.comment_size).color(sc.border_color.to_iced()); // use accent color
+                use which::which;
+                let text_to_render = if which("wl-copy").is_ok() || which("wl_copy").is_ok()
+                {
+                    cfg.behaviour.copy_feedback_text.clone()
+                }
+                else
+                {
+                    "ERROR!!! wl_copy not installed.".to_string()
+                };
+                let feedback_el = text(text_to_render).size(ec.comment_size).color(sc.border_color.to_iced()); // use accent color
                 row![icon_el, gap_el, label, Space::new().width(Length::Fill), feedback_el].align_y(Alignment::Center).into()
             }
             else
