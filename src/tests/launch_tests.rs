@@ -30,6 +30,7 @@ fn cfg_all_on() -> LauncherConfig
         case_sensitive:  false,
         close_on_launch: false,
         terminal_command: String::new(),
+        ..Default::default()
     };
     c
 }

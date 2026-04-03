@@ -14,6 +14,58 @@ use crate::color::ColorType;
 
 
 // ============ ENUM/STRUCT, ETC... ============
+
+/// Scrollbar appearance for the results list
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(default)]
+pub struct ScrollbarConfig
+{
+    /// Set to false to hide the scrollbar entirely
+    pub show:                  bool,
+    /// Width of the scrollbar rail track in pixels
+    pub width:                 u32,
+    /// Margin between the rail and the content edge
+    pub margin:                u32,
+    /// Width of the draggable scroller thumb in pixels
+    pub scroller_width:        u32,
+    /// Corner radius of the rail and scroller
+    pub border_radius:         [f32; 4],
+    /// Background color of the rail track (None = transparent)
+    pub rail_color:            ColorType,
+    /// Border color of the rail track
+    pub rail_border_color:     ColorType,
+    /// Border width of the rail track
+    pub rail_border_width:     f32,
+    /// Color of the scroller thumb
+    pub scroller_color:        ColorType,
+    /// Border color of the scroller thumb
+    pub scroller_border_color: ColorType,
+    /// Border width of the scroller thumb
+    pub scroller_border_width: f32,
+}
+
+impl Default for ScrollbarConfig
+{
+    fn default() -> Self
+    {
+        Self
+        {
+            show:                  true,
+            width:                 6,
+            margin:                2,
+            scroller_width:        6,
+            border_radius:         [3.0, 3.0, 3.0, 3.0],
+            rail_color:            ColorType::RGBA([0, 0, 0, 0]),
+            rail_border_color:     ColorType::RGBA([0, 0, 0, 0]),
+            rail_border_width:     0.0,
+            scroller_color:        ColorType::RGBA([100, 100, 100, 60]),
+            scroller_border_color: ColorType::RGBA([0, 0, 0, 0]),
+            scroller_border_width: 0.0,
+        }
+    }
+}
+
+
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(default)]
 pub struct WindowConfig
@@ -76,6 +128,34 @@ impl Default for WindowConfig
 }
 
 
+/// Where the search bar is placed relative to the results list
+#[derive(Default, Clone, Debug, PartialEq, Deserialize, Serialize)]
+pub enum SearchPosition
+{
+    /// Search bar above the results (default)
+    #[default]
+    Top,
+    /// Search bar below the results
+    Bottom,
+    /// Search bar to the left of the results
+    Left,
+    /// Search bar to the right of the results
+    Right,
+}
+
+
+/// Text rendering direction inside the search bar
+#[derive(Default, Clone, Debug, PartialEq, Deserialize, Serialize)]
+pub enum SearchOrientation
+{
+    /// Normal left-to-right text (default)
+    #[default]
+    Horizontal,
+    /// One character per line, top-to-bottom
+    Vertical,
+}
+
+
 /// Search bar appearance and behaviour
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(default)]
@@ -103,6 +183,12 @@ pub struct SearchConfig
     pub placeholder_color:    ColorType,
     /// Color of selected text highlight
     pub selection_color:      ColorType,
+    /// Where the search bar is placed relative to the results
+    pub position:             SearchPosition,
+    /// Text orientation inside the search bar
+    pub orientation:          SearchOrientation,
+    /// Width of the search bar when placed Left or Right (in pixels)
+    pub side_width:           u32,
 }
 
 impl Default for SearchConfig
@@ -122,6 +208,9 @@ impl Default for SearchConfig
             text_color:        ColorType::RGB([255, 255, 255]),
             placeholder_color: ColorType::RGB([179, 179, 179]),
             selection_color:   ColorType::HEX(*b"1c71d8\0\0\0"),
+            position:          SearchPosition::Top,
+            orientation:       SearchOrientation::Horizontal,
+            side_width:        48,
         }
     }
 }
@@ -321,6 +410,12 @@ pub struct SearchBehaviourConfig
     /// Terminal emulator command used for terminal apps (e.g. "kitty -e")
     /// Leave empty to ignore Terminal=true entries
     pub terminal_command:   String,
+    /// Evaluate mathematical expressions typed in the search bar
+    pub calc_enabled:         bool,
+    /// Text shown briefly after copying a calc result (e.g. "Copied!")
+    pub copy_feedback_text:    String,
+    /// How many seconds the copy feedback text stays visible
+    pub copy_feedback_seconds: f32,
 }
 
 impl Default for SearchBehaviourConfig
@@ -329,13 +424,16 @@ impl Default for SearchBehaviourConfig
     {
         Self
         {
-            search_name:      true,
-            search_comment:   true,
-            search_exec:      false,
-            search_keywords:  true,
-            case_sensitive:   false,
-            close_on_launch:  true,
-            terminal_command: String::new(),
+            search_name:           true,
+            search_comment:        true,
+            search_exec:           false,
+            search_keywords:       true,
+            case_sensitive:        false,
+            close_on_launch:       true,
+            terminal_command:      String::new(),
+            calc_enabled:          true,
+            copy_feedback_text:    "Copied!".into(),
+            copy_feedback_seconds: 2.0,
         }
     }
 }
@@ -346,11 +444,12 @@ impl Default for SearchBehaviourConfig
 #[serde(default)]
 pub struct LauncherConfig
 {
-    pub window:   WindowConfig,
-    pub search:   SearchConfig,
-    pub entry:    EntryConfig,
-    pub icon:     IconConfig,
-    pub footer:   FooterConfig,
+    pub window:    WindowConfig,
+    pub scrollbar: ScrollbarConfig,
+    pub search:    SearchConfig,
+    pub entry:     EntryConfig,
+    pub icon:      IconConfig,
+    pub footer:    FooterConfig,
     pub behaviour: SearchBehaviourConfig,
 }
 
@@ -445,6 +544,27 @@ LauncherConfig
 
 
     // ─────────────────────────────────────────────────────────────────────────
+    //  SCROLLBAR
+    // ─────────────────────────────────────────────────────────────────────────
+    scrollbar:
+    (
+        show:                   true,      // false = hide scrollbar entirely
+        width:                  6,         // rail track width in pixels
+        margin:                 2,         // gap between rail and content
+        scroller_width:         6,         // thumb width in pixels
+        border_radius:          (3.0, 3.0, 3.0, 3.0),
+
+        rail_color:             RGBA((0, 0, 0, 0)),
+        rail_border_color:      RGBA((0, 0, 0, 0)),
+        rail_border_width:      0.0,
+
+        scroller_color:         RGBA((100, 100, 100, 60)),
+        scroller_border_color:  RGBA((0, 0, 0, 0)),
+        scroller_border_width:  0.0,
+    ),
+
+
+    // ─────────────────────────────────────────────────────────────────────────
     //  SEARCH BAR
     // ─────────────────────────────────────────────────────────────────────────
     search:
@@ -462,6 +582,13 @@ LauncherConfig
         text_color:         RGB((255, 255, 255)),
         placeholder_color:  RGB((179, 179, 179)),
         selection_color:    HEX("1c71d8"),
+
+        // Position of the search bar: Top | Bottom | Left | Right
+        position:           Top,
+        // Text direction inside the bar: Horizontal | Vertical
+        orientation:        Horizontal,
+        // Width of the search bar when position is Left or Right
+        side_width:         48,
     ),
 
 
@@ -551,6 +678,13 @@ LauncherConfig
         // Set to your terminal command to support Terminal=true .desktop files.
         // Examples: "kitty -e"  |  "alacritty -e"  |  "foot"
         terminal_command:   "",
+
+        // Evaluate math expressions in the search bar (e.g. "2 * 4" → 8)
+        calc_enabled:           true,
+        // Text shown briefly next to the result after copying
+        copy_feedback_text:     "Copied!",
+        // How many seconds the feedback text stays visible
+        copy_feedback_seconds:  2.0,
     ),
 )
 "#;

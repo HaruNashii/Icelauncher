@@ -95,8 +95,39 @@ pub fn update(app: &mut AppData, message: Message) -> Task<Message>
             }
         }
 
+        Message::CopyToClipboard(value) =>
+        {
+            app.copy_feedback = true;
+            let secs = app.config.behaviour.copy_feedback_seconds;
+            if let Some(mut prev) = app.wl_copy_child.take() 
+            {
+                let _ = prev.kill();
+                let _ = prev.wait();
+            }
+            app.wl_copy_child = std::process::Command::new("wl-copy").arg(&value).stdin(std::process::Stdio::null()).stdout(std::process::Stdio::null()).stderr(std::process::Stdio::null()).spawn().ok();
+            return Task::perform
+            (
+                async move { tokio::time::sleep(std::time::Duration::from_secs_f32(secs)).await; },
+                |_| Message::CopiedFeedbackClear
+            );
+        }
+
+        Message::CopiedFeedbackClear =>
+        {
+            app.copy_feedback = false;
+        }
+
         Message::Launch(exec) =>
         {
+            if exec.is_empty()
+            {
+                if let Some(entry) = app.filtered.get(app.selected)
+                {
+                    let value = entry.name.trim_start_matches("= ").to_string();
+                    return update(app, Message::CopyToClipboard(value));
+                }
+                return Task::none();
+            }
             let terminal = app.filtered.iter().find(|e| e.exec == exec).map(|e| e.terminal).unwrap_or(false);
             launch_app(&exec, &app.config, terminal);
             if app.config.behaviour.close_on_launch { return iced::exit(); }

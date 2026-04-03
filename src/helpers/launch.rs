@@ -3,11 +3,9 @@ use std::process::Command as StdCommand;
 
 
 
-
 // ============ CRATES ============
 use crate::AppEntry;
 use crate::ron::LauncherConfig;
-
 
 
 
@@ -26,7 +24,32 @@ pub fn launch_app(exec: &str, cfg: &LauncherConfig, terminal: bool)
     let parts: Vec<&str> = full_cmd.split_whitespace().collect();
     if let Some((prog, args)) = parts.split_first()
     {
-        let _ = StdCommand::new(prog).args(args).spawn();
+        let _ = StdCommand::new(prog).args(args).stdin(std::process::Stdio::null()).stdout(std::process::Stdio::null()).stderr(std::process::Stdio::null()).spawn();
+    }
+}
+
+
+
+fn try_evaluate(expr: &str) -> Option<String>
+{
+    // Must contain at least one operator to avoid showing a result for every
+    // plain word the user types.
+    let has_operator = expr.contains(['+', '-', '*', '/', '%', '^', '(', ')']);
+    if !has_operator { return None; }
+
+    let mut ns = fasteval::EmptyNamespace;
+    let result = fasteval::ez_eval(expr, &mut ns).ok()?;
+
+    // Format: drop the decimal part when the result is a whole number.
+    if result.fract() == 0.0 && result.abs() < 1e15
+    {
+        Some(format!("{}", result as i64))
+    }
+    else
+    {
+        // Up to 10 significant digits, strip trailing zeros.
+        let s = format!("{:.10}", result);
+        Some(s.trim_end_matches('0').trim_end_matches('.').to_string())
     }
 }
 
@@ -81,5 +104,23 @@ pub fn filter_entries(entries: &[AppEntry], query: &str, cfg: &LauncherConfig) -
     }).collect();
 
     scored.sort_by(|(sa, a), (sb, b)| sa.cmp(sb).then(a.name.to_lowercase().cmp(&b.name.to_lowercase())));
-    scored.into_iter().map(|(_, e)| e).collect()
+    let mut results: Vec<AppEntry> = scored.into_iter().map(|(_, e)| e).collect();
+
+    // Prepend calculator result if enabled and the query evaluates cleanly.
+    if cfg.behaviour.calc_enabled && let Some(value) = try_evaluate(query.trim())
+    {
+        let calc_entry = AppEntry
+        {
+            name:      format!("= {}", value),
+            exec:      String::new(),
+            comment:   query.trim().to_string(),
+            icon:      String::new(),
+            icon_path: None,
+            keywords:  Vec::new(),
+            terminal:  false,
+        };
+        results.insert(0, calc_entry);
+    }
+
+    results
 }
