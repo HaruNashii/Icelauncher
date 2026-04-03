@@ -148,7 +148,7 @@ pub fn discover_themes(bases: &[String]) -> Vec<String>
 
     if !themes.contains(&"hicolor".to_string()) { themes.push("hicolor".to_string()); }
 
-    println!("[icelauncher] Themes found: {:?}", themes);
+    eprintln!("[icelauncher] Themes found: {:?}", themes);
 
     themes
 }
@@ -169,7 +169,7 @@ fn get_icon_theme() -> String
                     if let Some(v) = line.strip_prefix("gtk-icon-theme-name=")
                     {
                         let theme = v.trim().to_string();
-                        println!("[icelauncher] Theme selected: {} (from GTK)", theme);
+                        eprintln!("[icelauncher] Theme selected: {} (from GTK)", theme);
                         return theme;
                     }
                 }
@@ -187,7 +187,7 @@ fn get_icon_theme() -> String
                 if in_icons && let Some(v) = line.strip_prefix("Theme=")
                 {
                     let theme = v.trim().to_string();
-                    println!("[icelauncher] Theme selected: {} (from KDE)", theme);
+                    eprintln!("[icelauncher] Theme selected: {} (from KDE)", theme);
                     return theme;
                 }
             }
@@ -205,7 +205,7 @@ fn get_icon_theme() -> String
                         if let Some(end) = rest.find('"')
                         {
                             let theme = rest[..end].to_string();
-                            println!("[icelauncher] Theme selected: {} (from XFCE)", theme);
+                            eprintln!("[icelauncher] Theme selected: {} (from XFCE)", theme);
                             return theme;
                         }
                 }
@@ -213,7 +213,7 @@ fn get_icon_theme() -> String
         }
     }
 
-    println!("[icelauncher] Theme selected: hicolor (fallback)");
+    eprintln!("[icelauncher] Theme selected: hicolor (fallback)");
     "hicolor".to_string()
 }
 

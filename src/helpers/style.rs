@@ -32,9 +32,8 @@ pub fn entry_button_style(status: Status, is_selected: bool, cfg: &LauncherConfi
 
     let bg = match (is_selected, status)
     {
-        (true,  Status::Pressed)  => ec.selected_hovered_color.to_iced(),
+        (true,  Status::Pressed | Status::Hovered)  => ec.selected_hovered_color.to_iced(),
         (false, Status::Pressed)  => ec.pressed_color.to_iced(),
-        (true, Status::Hovered)   => ec.selected_hovered_color.to_iced(),
         (true, _)                 => ec.selected_color.to_iced(),
         (false, Status::Hovered)  => ec.hovered_color.to_iced(),
         (false, _)                => ec.background_color.to_iced(),
