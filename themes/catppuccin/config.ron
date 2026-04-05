@@ -1,0 +1,202 @@
+// ╭─────────────────────────────────────────────────────────────────────────╮
+// │                                                                         │
+// │   C A T P P U C C I N   ·   ICELAUNCHER                                │
+// │   Mocha palette. Soft pill. 3-column grid. Search at the bottom.        │
+// │                                                                         │
+// ╰─────────────────────────────────────────────────────────────────────────╯
+//
+//  PALETTE — Catppuccin Mocha
+//
+//    base      ( 30,  30,  46)  ← window background
+//    mantle    ( 24,  24,  37)  ← darker surface
+//    surface0  ( 49,  50,  68)  ← module / entry bg
+//    surface1  ( 69,  71,  90)  ← hover
+//    surface2  ( 88,  91, 112)  ← borders
+//    overlay0  (108, 112, 134)  ← muted text
+//    text      (205, 214, 244)  ← primary text
+//    lavender  (180, 190, 254)  ← accent (selected)
+//    mauve     (203, 166, 247)  ← accent (search border, icons)
+//    pink      (245, 194, 231)  ← hover text accent
+//
+//  DESIGN:
+//    · 3-column grid (grid_side_items: 3) — browse apps visually
+//    · Search bar at the BOTTOM — thumb-friendly, Spotlight-inverted
+//    · Rounded window (18px radius) — soft, bubbly feel
+//    · No footer, no scrollbar rail — minimal chrome
+//    · Mauve search border and icon accent, lavender for selected entries
+//    · Icons enabled with real icon support off — consistent fallback glyphs
+
+LauncherConfig
+(
+
+    // ─────────────────────────────────────────────────────────────────────────
+    //  WINDOW
+    // ─────────────────────────────────────────────────────────────────────────
+    window:
+    (
+        width:              620,
+        height:             500,
+        max_results:        18,
+        padding:            16,
+        section_spacing:    8,
+        entry_spacing:      6,
+        grid_side_items:    3,
+
+        border_radius:      (18.0, 18.0, 18.0, 18.0),
+        border_width:       1.0,
+        border_color:       RGB((88, 91, 112)),
+        background_color:   RGBA((30, 30, 46, 97)),
+
+        shadow_color:       RGBA((0, 0, 0, 60)),
+        shadow_offset_x:    0.0,
+        shadow_offset_y:    8.0,
+        shadow_blur:        32.0,
+    ),
+
+
+    // ─────────────────────────────────────────────────────────────────────────
+    //  SCROLLBAR
+    // ─────────────────────────────────────────────────────────────────────────
+    scrollbar:
+    (
+        show:                   true,
+        width:                  4,
+        margin:                 3,
+        scroller_width:         4,
+        border_radius:          (2.0, 2.0, 2.0, 2.0),
+
+        rail_color:             RGBA((0, 0, 0, 0)),
+        rail_border_color:      RGBA((0, 0, 0, 0)),
+        rail_border_width:      0.0,
+
+        scroller_color:         RGBA((203, 166, 247, 50)),
+        scroller_border_color:  RGBA((0, 0, 0, 0)),
+        scroller_border_width:  0.0,
+    ),
+
+
+    // ─────────────────────────────────────────────────────────────────────────
+    //  SEARCH BAR
+    // ─────────────────────────────────────────────────────────────────────────
+    search:
+    (
+        placeholder:        "Search applications...",
+        text_size:          15,
+        input_padding:      12,
+        bottom_margin:      0.0,
+
+        background_color:   RGB((49, 50, 68)),
+        border_color:       RGB((203, 166, 247)),
+        border_width:       1.5,
+        border_radius:      (10.0, 10.0, 10.0, 10.0),
+
+        text_color:         RGB((205, 214, 244)),
+        placeholder_color:  RGB((108, 112, 134)),
+        selection_color:    RGB((180, 190, 254)),
+
+        position:           Bottom,
+        orientation:        Horizontal,
+        width:              0,
+        height:             0,
+        fixed_x:            None,
+        fixed_y:            None,
+    ),
+
+
+    // ─────────────────────────────────────────────────────────────────────────
+    //  RESULT ENTRIES
+    // ─────────────────────────────────────────────────────────────────────────
+    entry:
+    (
+        name_size:              13,
+        name_color:             RGB((205, 214, 244)),
+
+        comment_size:           10,
+        comment_color:          RGB((108, 112, 134)),
+        comment_max_chars:      30,
+        show_comment:           false,
+
+        padding:                (10, 8),
+
+        background_color:       RGBA((49, 50, 68, 60)),
+        hovered_color:          RGB((69, 71, 90)),
+        pressed_color:          RGB((30, 30, 46)),
+        selected_color:         RGBA((180, 190, 254, 20)),
+        selected_hovered_color: RGB((180, 190, 254)),
+        text_color:             RGB((205, 214, 244)),
+
+        border_color:           RGBA((88, 91, 112, 40)),
+        selected_border_color:  RGB((180, 190, 254)),
+        border_width:           1.0,
+        border_radius:          (10.0, 10.0, 10.0, 10.0),
+
+        shadow_color:           RGBA((0, 0, 0, 0)),
+        shadow_offset_x:        0.0,
+        shadow_offset_y:        0.0,
+        shadow_blur:            0.0,
+
+        width:                  0,
+        height:                 70,
+    ),
+
+
+    // ─────────────────────────────────────────────────────────────────────────
+    //  ICON BADGE
+    // ─────────────────────────────────────────────────────────────────────────
+    icon:
+    (
+        show:               true,
+        use_real_icons:     false,
+        width:              32,
+        height:             32,
+        text_size:          16,
+        gap:                8,
+
+        background_color:   RGB((49, 50, 68)),
+        selected_color:     RGB((180, 190, 254)),
+        icon_color:         RGB((203, 166, 247)),
+
+        border_color:       RGB((88, 91, 112)),
+        border_width:       1.0,
+        border_radius:      (8.0, 8.0, 8.0, 8.0),
+    ),
+
+
+    // ─────────────────────────────────────────────────────────────────────────
+    //  FOOTER
+    // ─────────────────────────────────────────────────────────────────────────
+    footer:
+    (
+        show:           false,
+        show_hint:      false,
+        hint_text:      "",
+        show_count:     false,
+        text_size:      11,
+        text_color:     RGB((108, 112, 134)),
+        top_margin:     0.0,
+        position:       Bottom,
+        text_orientation: Horizontal,
+        width:          0,
+        height:         0,
+    ),
+
+
+    // ─────────────────────────────────────────────────────────────────────────
+    //  SEARCH BEHAVIOUR
+    // ─────────────────────────────────────────────────────────────────────────
+    behaviour:
+    (
+        search_name:        true,
+        search_comment:     true,
+        search_exec:        false,
+        search_keywords:    true,
+        case_sensitive:     false,
+        close_on_launch:    true,
+        terminal_command:   "",
+        calc_enabled:           true,
+        copy_feedback_text:     "Copied!",
+        copy_feedback_seconds:  2.0,
+    ),
+
+    background_images: [],
+)

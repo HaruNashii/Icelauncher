@@ -1,8 +1,8 @@
-use std::io::Write;
-use std::path::PathBuf;
+use std::{io::Write, path::PathBuf};
+
 use tempfile::NamedTempFile;
 
-use crate::helpers::desktop::{sanitize_exec, parse_desktop_file};
+use crate::helpers::desktop::{parse_desktop_file, sanitize_exec};
 
 // ── sanitize_exec ────────────────────────────────────────────────────────────
 
@@ -87,9 +87,7 @@ fn parse(content: &str) -> Option<crate::AppEntry>
 #[test]
 fn parse_minimal_valid_entry()
 {
-    let entry = parse(
-        "[Desktop Entry]\nName=Test\nExec=test\nType=Application\n"
-    ).unwrap();
+    let entry = parse("[Desktop Entry]\nName=Test\nExec=test\nType=Application\n").unwrap();
     assert_eq!(entry.name, "Test");
     assert_eq!(entry.exec, "test");
 }
@@ -100,10 +98,10 @@ fn parse_full_entry_all_fields()
     let entry = parse(
         "[Desktop Entry]\nName=Firefox\nExec=firefox %u\nComment=Web Browser\nIcon=firefox\nKeywords=web;browser;internet;\nType=Application\n"
     ).unwrap();
-    assert_eq!(entry.name,    "Firefox");
-    assert_eq!(entry.exec,    "firefox");   // %u stripped
+    assert_eq!(entry.name, "Firefox");
+    assert_eq!(entry.exec, "firefox"); // %u stripped
     assert_eq!(entry.comment, "Web Browser");
-    assert_eq!(entry.icon,    "firefox");
+    assert_eq!(entry.icon, "firefox");
     assert_eq!(entry.keywords, vec!["web", "browser", "internet"]);
     assert!(!entry.terminal);
 }
@@ -111,63 +109,52 @@ fn parse_full_entry_all_fields()
 #[test]
 fn parse_terminal_true_sets_flag()
 {
-    let entry = parse(
-        "[Desktop Entry]\nName=Htop\nExec=htop\nType=Application\nTerminal=true\n"
-    ).unwrap();
+    let entry =
+        parse("[Desktop Entry]\nName=Htop\nExec=htop\nType=Application\nTerminal=true\n").unwrap();
     assert!(entry.terminal);
 }
 
 #[test]
 fn parse_terminal_false_does_not_set_flag()
 {
-    let entry = parse(
-        "[Desktop Entry]\nName=App\nExec=app\nType=Application\nTerminal=false\n"
-    ).unwrap();
+    let entry =
+        parse("[Desktop Entry]\nName=App\nExec=app\nType=Application\nTerminal=false\n").unwrap();
     assert!(!entry.terminal);
 }
 
 #[test]
 fn parse_no_display_true_returns_none()
 {
-    let result = parse(
-        "[Desktop Entry]\nName=Hidden\nExec=hidden\nType=Application\nNoDisplay=true\n"
-    );
+    let result =
+        parse("[Desktop Entry]\nName=Hidden\nExec=hidden\nType=Application\nNoDisplay=true\n");
     assert!(result.is_none());
 }
 
 #[test]
 fn parse_missing_name_returns_none()
 {
-    let result = parse(
-        "[Desktop Entry]\nExec=test\nType=Application\n"
-    );
+    let result = parse("[Desktop Entry]\nExec=test\nType=Application\n");
     assert!(result.is_none());
 }
 
 #[test]
 fn parse_missing_exec_returns_none()
 {
-    let result = parse(
-        "[Desktop Entry]\nName=Test\nType=Application\n"
-    );
+    let result = parse("[Desktop Entry]\nName=Test\nType=Application\n");
     assert!(result.is_none());
 }
 
 #[test]
 fn parse_non_application_type_returns_none()
 {
-    let result = parse(
-        "[Desktop Entry]\nName=Link\nExec=link\nType=Link\n"
-    );
+    let result = parse("[Desktop Entry]\nName=Link\nExec=link\nType=Link\n");
     assert!(result.is_none());
 }
 
 #[test]
 fn parse_directory_type_returns_none()
 {
-    let result = parse(
-        "[Desktop Entry]\nName=Dir\nExec=dir\nType=Directory\n"
-    );
+    let result = parse("[Desktop Entry]\nName=Dir\nExec=dir\nType=Directory\n");
     assert!(result.is_none());
 }
 
@@ -186,18 +173,17 @@ fn parse_ignores_keys_outside_desktop_entry_section()
 fn parse_only_first_name_is_used()
 {
     // Duplicate Name= lines: only the first wins
-    let entry = parse(
-        "[Desktop Entry]\nName=First\nName=Second\nExec=app\nType=Application\n"
-    ).unwrap();
+    let entry =
+        parse("[Desktop Entry]\nName=First\nName=Second\nExec=app\nType=Application\n").unwrap();
     assert_eq!(entry.name, "First");
 }
 
 #[test]
 fn parse_keywords_lowercased_and_filtered()
 {
-    let entry = parse(
-        "[Desktop Entry]\nName=App\nExec=app\nType=Application\nKeywords=FOO;Bar;;baz;\n"
-    ).unwrap();
+    let entry =
+        parse("[Desktop Entry]\nName=App\nExec=app\nType=Application\nKeywords=FOO;Bar;;baz;\n")
+            .unwrap();
     // Empty segments filtered, all lowercased
     assert_eq!(entry.keywords, vec!["foo", "bar", "baz"]);
 }
@@ -205,18 +191,16 @@ fn parse_keywords_lowercased_and_filtered()
 #[test]
 fn parse_empty_keywords_gives_empty_vec()
 {
-    let entry = parse(
-        "[Desktop Entry]\nName=App\nExec=app\nType=Application\nKeywords=\n"
-    ).unwrap();
+    let entry =
+        parse("[Desktop Entry]\nName=App\nExec=app\nType=Application\nKeywords=\n").unwrap();
     assert!(entry.keywords.is_empty());
 }
 
 #[test]
 fn parse_icon_path_initially_none()
 {
-    let entry = parse(
-        "[Desktop Entry]\nName=App\nExec=app\nIcon=myicon\nType=Application\n"
-    ).unwrap();
+    let entry =
+        parse("[Desktop Entry]\nName=App\nExec=app\nIcon=myicon\nType=Application\n").unwrap();
     // icon_path is resolved later; parse sets it to None
     assert!(entry.icon_path.is_none());
     assert_eq!(entry.icon, "myicon");
@@ -225,9 +209,7 @@ fn parse_icon_path_initially_none()
 #[test]
 fn parse_comment_empty_when_absent()
 {
-    let entry = parse(
-        "[Desktop Entry]\nName=App\nExec=app\nType=Application\n"
-    ).unwrap();
+    let entry = parse("[Desktop Entry]\nName=App\nExec=app\nType=Application\n").unwrap();
     assert_eq!(entry.comment, "");
 }
 
@@ -241,8 +223,7 @@ fn parse_nonexistent_file_returns_none()
 #[test]
 fn parse_exec_percent_stripped()
 {
-    let entry = parse(
-        "[Desktop Entry]\nName=App\nExec=myapp %F --flag\nType=Application\n"
-    ).unwrap();
+    let entry =
+        parse("[Desktop Entry]\nName=App\nExec=myapp %F --flag\nType=Application\n").unwrap();
     assert_eq!(entry.exec, "myapp --flag");
 }

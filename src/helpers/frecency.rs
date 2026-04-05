@@ -1,0 +1,139 @@
+// ============ IMPORTS ============
+use std::collections::HashMap;
+use std::fs;
+use std::path::PathBuf;
+use std::time::{SystemTime, UNIX_EPOCH};
+
+use serde::{Deserialize, Serialize};
+
+
+
+
+// ============ STATIC'S/CONST'S ============
+const MAX_LAUNCHES_PER_APP: usize = 50;
+const FRECENCY_STORE_PATH: &str = ".cache/icelauncher/frecency.json";
+
+
+
+
+// ============ ENUM/STRUCT, ETC ============
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
+pub struct AppRecord
+{
+	pub launches: Vec<u64>,
+}
+
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
+pub struct FrecencyStore
+{
+	pub apps: HashMap<String, AppRecord>,
+}
+
+
+
+
+// ============ IMPL'S ============
+impl AppRecord
+{
+	pub fn record_launch(&mut self)
+	{
+		self.launches.insert(0, now_secs());
+		self.launches.truncate(MAX_LAUNCHES_PER_APP);
+	}
+
+	pub fn score_at(&self, now: u64) -> f64
+	{
+		self.launches.iter().map(|&t| recency_weight(now, t)).sum()
+	}
+
+	pub fn score(&self) -> f64
+	{
+		self.score_at(now_secs())
+	}
+
+	pub fn launch_count(&self) -> usize
+	{
+		self.launches.len()
+	}
+}
+
+impl FrecencyStore
+{
+	pub fn load() -> Self
+	{
+		let path = store_path();
+		let text = fs::read_to_string(&path).unwrap_or_default();
+		serde_json::from_str(&text).unwrap_or_default()
+	}
+
+	pub fn save(&self)
+	{
+		let path = store_path();
+		if let Some(parent) = path.parent() {
+			let _ = fs::create_dir_all(parent);
+		}
+		if let Ok(json) = serde_json::to_string_pretty(self) {
+			let _ = fs::write(&path, json);
+		}
+	}
+
+	pub fn save_record(&mut self, exec: &str)
+	{
+		self.record_in_memory(exec);
+		self.save();
+	}
+
+	pub fn record_in_memory(&mut self, exec: &str)
+	{
+		self.apps.entry(exec.to_string()).or_default().record_launch();
+	}
+
+	pub fn score(&self, exec: &str) -> f64
+	{
+		self.apps.get(exec).map(|r| r.score()).unwrap_or(0.0)
+	}
+
+	pub fn score_snapshot(&self) -> HashMap<&str, f64>
+	{
+		let now = now_secs();
+		self.apps.iter().map(|(k, v)| (k.as_str(), v.score_at(now))).collect()
+	}
+
+	pub fn launch_count(&self, exec: &str) -> usize
+	{
+		self.apps.get(exec).map(|r| r.launch_count()).unwrap_or(0)
+	}
+
+	pub fn top_n(&self, n: usize) -> Vec<String>
+	{
+		let now = now_secs();
+		let mut scored: Vec<(&String, f64)> =
+			self.apps.iter().map(|(k, v)| (k, v.score_at(now))).collect();
+		scored.sort_unstable_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
+		scored.into_iter().take(n).map(|(k, _)| k.clone()).collect()
+	}
+}
+
+
+
+
+// ============ FUNCTIONS ============
+#[inline]
+fn recency_weight(now_secs: u64, launch_secs: u64) -> f64
+{
+	let age_secs = now_secs.saturating_sub(launch_secs) as f64;
+	let age_days = (age_secs / 86_400.0).max(0.01);
+	1.0 / age_days
+}
+
+
+fn now_secs() -> u64
+{
+	SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0)
+}
+
+
+fn store_path() -> PathBuf
+{
+    home::home_dir().unwrap_or_else(|| PathBuf::from(".")).join(FRECENCY_STORE_PATH)
+}

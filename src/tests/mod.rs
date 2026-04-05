@@ -1,16 +1,17 @@
-#[cfg(test)]
-pub mod text_tests;
+// ============ MOD'S ============
 #[cfg(test)]
 pub mod color_tests;
 #[cfg(test)]
 pub mod desktop_tests;
 #[cfg(test)]
+pub mod icon_tests;
+#[cfg(test)]
 pub mod launch_tests;
 #[cfg(test)]
-pub mod icon_tests;
+pub mod misc_tests;
 #[cfg(test)]
 pub mod scroll_tests;
 #[cfg(test)]
-pub mod update_tests;
+pub mod text_tests;
 #[cfg(test)]
-pub mod misc_tests;
+pub mod update_tests;

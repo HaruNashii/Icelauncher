@@ -1,0 +1,206 @@
+// ╭─────────────────────────────────────────────────────────────────────────╮
+// │                                                                         │
+// │   T O K Y O   N I G H T   ·   ICELAUNCHER                              │
+// │   Neon rain. 2-column list-grid. Bottom search. City glow shadows.      │
+// │                                                                         │
+// ╰─────────────────────────────────────────────────────────────────────────╯
+//
+//  PALETTE — Tokyo Night
+//
+//    bg          ( 26,  27,  38)  ← window background
+//    bg_dark     ( 31,  35,  53)  ← entry bg
+//    bg_highlight( 40,  44,  68)  ← hover
+//    terminal_black(32, 36,  57)  ← pressed
+//    fg          (192, 202, 245)  ← primary text
+//    fg_dark     (169, 177, 214)  ← secondary text
+//    comment     ( 86,  95, 137)  ← muted / placeholder
+//    blue        (122, 162, 247)  ← PRIMARY ACCENT — search, selected
+//    cyan        (125, 207, 255)  ← icon glyph / count
+//    purple      (187, 154, 247)  ← icon selected bg
+//    magenta     (255, 118, 175)  ← search placeholder accent
+//    green       (158, 206, 106)  ← selected border
+//    orange      (255, 158,  100) ← hover text
+//    red         (247,  118, 142) ← pressed bg hint
+//
+//  DESIGN:
+//    · 2-column grid with tall entries (grid_side_items: 2, height: 72)
+//    · Search pinned to BOTTOM — city bar vibes
+//    · Neon blue search border glows via deep shadow
+//    · Heavy drop shadows — Tokyo rain on neon signs
+//    · Purple icon selected — magenta would be too loud
+//    · Footer on TOP — unusual; count sits above results like a HUD
+
+LauncherConfig
+(
+
+    // ─────────────────────────────────────────────────────────────────────────
+    //  WINDOW
+    // ─────────────────────────────────────────────────────────────────────────
+    window:
+    (
+        width:              580,
+        height:             480,
+        max_results:        16,
+        padding:            14,
+        section_spacing:    6,
+        entry_spacing:      6,
+        grid_side_items:    2,
+
+        border_radius:      (14.0, 14.0, 14.0, 14.0),
+        border_width:       1.0,
+        border_color:       RGB((40, 44, 68)),
+        background_color:   RGBA((26, 27, 38, 97)),
+
+        shadow_color:       RGBA((122, 162, 247, 20)),
+        shadow_offset_x:    0.0,
+        shadow_offset_y:    0.0,
+        shadow_blur:        40.0,
+    ),
+
+
+    // ─────────────────────────────────────────────────────────────────────────
+    //  SCROLLBAR
+    // ─────────────────────────────────────────────────────────────────────────
+    scrollbar:
+    (
+        show:                   true,
+        width:                  4,
+        margin:                 3,
+        scroller_width:         4,
+        border_radius:          (2.0, 2.0, 2.0, 2.0),
+
+        rail_color:             RGBA((40, 44, 68, 60)),
+        rail_border_color:      RGBA((0, 0, 0, 0)),
+        rail_border_width:      0.0,
+
+        scroller_color:         RGBA((122, 162, 247, 70)),
+        scroller_border_color:  RGBA((0, 0, 0, 0)),
+        scroller_border_width:  0.0,
+    ),
+
+
+    // ─────────────────────────────────────────────────────────────────────────
+    //  SEARCH BAR
+    // ─────────────────────────────────────────────────────────────────────────
+    search:
+    (
+        placeholder:        "Search the city...",
+        text_size:          15,
+        input_padding:      12,
+        bottom_margin:      0.0,
+
+        background_color:   RGB((31, 35, 53)),
+        border_color:       RGB((122, 162, 247)),
+        border_width:       1.5,
+        border_radius:      (10.0, 10.0, 10.0, 10.0),
+
+        text_color:         RGB((192, 202, 245)),
+        placeholder_color:  RGB((86, 95, 137)),
+        selection_color:    RGB((122, 162, 247)),
+
+        position:           Bottom,
+        orientation:        Horizontal,
+        width:              0,
+        height:             0,
+        fixed_x:            None,
+        fixed_y:            None,
+    ),
+
+
+    // ─────────────────────────────────────────────────────────────────────────
+    //  RESULT ENTRIES
+    // ─────────────────────────────────────────────────────────────────────────
+    entry:
+    (
+        name_size:              13,
+        name_color:             RGB((192, 202, 245)),
+
+        comment_size:           10,
+        comment_color:          RGB((86, 95, 137)),
+        comment_max_chars:      40,
+        show_comment:           false,
+
+        padding:                (8, 8),
+
+        background_color:       RGBA((31, 35, 53, 60)),
+        hovered_color:          RGB((40, 44, 68)),
+        pressed_color:          RGBA((247, 118, 142, 12)),
+        selected_color:         RGBA((122, 162, 247, 12)),
+        selected_hovered_color: RGBA((122, 162, 247, 25)),
+        text_color:             RGB((192, 202, 245)),
+
+        border_color:           RGBA((40, 44, 68, 70)),
+        selected_border_color:  RGB((158, 206, 106)),
+        border_width:           1.0,
+        border_radius:          (10.0, 10.0, 10.0, 10.0),
+
+        shadow_color:           RGBA((0, 0, 0, 50)),
+        shadow_offset_x:        0.0,
+        shadow_offset_y:        3.0,
+        shadow_blur:            10.0,
+
+        width:                  0,
+        height:                 72,
+    ),
+
+
+    // ─────────────────────────────────────────────────────────────────────────
+    //  ICON BADGE
+    // ─────────────────────────────────────────────────────────────────────────
+    icon:
+    (
+        show:               true,
+        use_real_icons:     false,
+        width:              34,
+        height:             34,
+        text_size:          18,
+        gap:                10,
+
+        background_color:   RGB((31, 35, 53)),
+        selected_color:     RGB((187, 154, 247)),
+        icon_color:         RGB((125, 207, 255)),
+
+        border_color:       RGBA((40, 44, 68, 80)),
+        border_width:       1.0,
+        border_radius:      (8.0, 8.0, 8.0, 8.0),
+    ),
+
+
+    // ─────────────────────────────────────────────────────────────────────────
+    //  FOOTER
+    // ─────────────────────────────────────────────────────────────────────────
+    footer:
+    (
+        show:           true,
+        show_hint:      false,
+        hint_text:      "",
+        show_count:     true,
+        text_size:      10,
+        text_color:     RGB((125, 207, 255)),
+        top_margin:     0.0,
+        position:       Top,
+        text_orientation: Horizontal,
+        width:          0,
+        height:         0,
+    ),
+
+
+    // ─────────────────────────────────────────────────────────────────────────
+    //  SEARCH BEHAVIOUR
+    // ─────────────────────────────────────────────────────────────────────────
+    behaviour:
+    (
+        search_name:        true,
+        search_comment:     true,
+        search_exec:        false,
+        search_keywords:    true,
+        case_sensitive:     false,
+        close_on_launch:    true,
+        terminal_command:   "",
+        calc_enabled:           true,
+        copy_feedback_text:     "Copied!",
+        copy_feedback_seconds:  2.0,
+    ),
+
+    background_images: [],
+)
