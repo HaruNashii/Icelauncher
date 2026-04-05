@@ -3,6 +3,7 @@ pub mod calc;
 pub mod desktop;
 pub mod filter;
 pub mod footer;
+pub mod color;
 pub mod update_helpers;
 pub mod frecency;
 pub mod fuzzy;

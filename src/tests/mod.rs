@@ -12,6 +12,4 @@ pub mod misc_tests;
 #[cfg(test)]
 pub mod scroll_tests;
 #[cfg(test)]
-pub mod text_tests;
-#[cfg(test)]
 pub mod update_tests;

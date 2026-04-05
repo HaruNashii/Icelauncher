@@ -1,4 +1,4 @@
-use crate::color::{ColorType, hex_color, hex_to_iced};
+use crate::helpers::color::{ColorType, hex_color, hex_to_iced};
 
 // ── hex_color ────────────────────────────────────────────────────────────────
 

@@ -19,7 +19,6 @@ use crate::view::view;
 
 
 // ============ MOD'S ============
-mod color;
 mod helpers;
 mod ron;
 mod subscription;

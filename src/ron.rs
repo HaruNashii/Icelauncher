@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 
 
 // ============ CRATES ============
-use crate::color::{ColorType, hex_color};
+use crate::helpers::color::{ColorType, hex_color};
 
 
 
