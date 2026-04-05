@@ -251,7 +251,7 @@ pub fn view(app: &AppData) -> Element<'_, Message>
             let row_content: Element<Message> = if is_calc && is_selected && app.copy_feedback
             {
                 use which::which;
-                let text_to_render = if which("wl-copy").is_ok() || which("wl_copy").is_ok()
+                let text_to_render = if which("wl-copy").is_ok()
                 {
                     cfg.behaviour.copy_feedback_text.clone()
                 }

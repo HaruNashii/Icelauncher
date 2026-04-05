@@ -26,16 +26,11 @@ pub fn scan_desktop_files() -> Vec<AppEntry>
 {
     let search_dirs: Vec<PathBuf> =
     {
-        let mut dirs = vec!
-        [
-            PathBuf::from("/usr/share/applications"),
-            PathBuf::from("/usr/local/share/applications"),
-        ];
+        let mut dirs = Vec::new();
         if let Some(home) = home::home_dir() { dirs.push(home.join(".local/share/applications")); }
-        if let Ok(xdg_dirs) = std::env::var("XDG_DATA_DIRS")
-        {
-            for p in xdg_dirs.split(':') { dirs.push(PathBuf::from(p).join("applications")); }
-        }
+        if let Ok(xdg_dirs) = std::env::var("XDG_DATA_DIRS") { for p in xdg_dirs.split(':') { dirs.push(PathBuf::from(p).join("applications")); } }
+        dirs.push(PathBuf::from("/usr/local/share/applications")); 
+        dirs.push(PathBuf::from("/usr/share/applications")); 
         dirs
     };
 
