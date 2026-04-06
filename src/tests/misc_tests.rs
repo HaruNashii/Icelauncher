@@ -281,7 +281,8 @@ fn scroll_partial_last_row_grid_does_not_panic()
 
     // 5 entries, 2 cols → rows: [0,1], [2,3], [4] — partial last row
     let entries: Vec<_> = (0 .. 5).map(|i| plain_entry(&format!("App{i}"))).collect();
-    let base_h = 14_f32 + 6.0 * 2.0 + 8.0; // 34
+    // padding=[6,10,0,0]: row_height uses padding[0]+padding[2] = 6+0 = 6 (not 6*2=12)
+    let base_h = 14_f32 + 6.0 + 0.0 + 8.0; // 28
     let spacing = 3.0;
     let content = base_h * 3.0 + spacing * 2.0;
     let viewport = base_h; // 1 row visible
@@ -299,7 +300,8 @@ fn scroll_partial_last_row_scrolls_into_view()
     use crate::helpers::scroll::scroll_to_selected;
 
     let entries: Vec<_> = (0 .. 5).map(|i| plain_entry(&format!("App{i}"))).collect();
-    let base_h = 14_f32 + 6.0 * 2.0 + 8.0;
+    // padding=[6,10,0,0]: row_height uses padding[0]+padding[2] = 6+0 = 6
+    let base_h = 14_f32 + 6.0 + 0.0 + 8.0; // 28
     let spacing = 3.0;
     let content = base_h * 3.0 + spacing * 2.0;
     let viewport = base_h;
@@ -317,7 +319,8 @@ fn scroll_first_entry_from_bottom_reaches_near_zero()
     use crate::helpers::scroll::scroll_to_selected;
 
     let entries: Vec<_> = (0 .. 8).map(|i| plain_entry(&format!("App{i}"))).collect();
-    let base_h = 14_f32 + 6.0 * 2.0 + 8.0;
+    // padding=[6,10,0,0]: row_height uses padding[0]+padding[2] = 6+0 = 6
+    let base_h = 14_f32 + 6.0 + 0.0 + 8.0; // 28
     let spacing = 3.0;
     let content = base_h * 8.0 + spacing * 7.0;
     let viewport = base_h * 2.0; // 2 rows visible

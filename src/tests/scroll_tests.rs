@@ -58,9 +58,14 @@ fn row_heights() -> (f32, f32)
 {
     let name_size = 14_f32;
     let comment_size = 11_f32;
-    let pad_v = 6_f32;
-    let base_h = name_size + pad_v * 2.0 + 8.0; // 14+12+8 = 34
-    let tall_h = base_h + comment_size + 6.0; // 34+11+6 = 51
+    // padding = [6, 10, 0, 0]  →  top=6, bottom=0
+    // row_height uses padding[0]+padding[2], not padding[0]*2
+    let pad_top = 6_f32;
+    let pad_bottom = 0_f32;
+    // name_comment_spacing defaults to 2 (not hardcoded 6)
+    let name_comment_spacing = 2_f32;
+    let base_h = name_size + pad_top + pad_bottom + 8.0; // 14+6+0+8 = 28
+    let tall_h = base_h + comment_size + name_comment_spacing; // 28+11+2 = 41
     (base_h, tall_h)
 }
 

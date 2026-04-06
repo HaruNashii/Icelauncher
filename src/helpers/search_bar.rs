@@ -1,23 +1,31 @@
+// ============ IMPORTS ============
 use iced_layershell::reexport::core::Border;
 use iced::{Alignment, Color, Element, Length, Padding, border::Radius, widget::{column, container, row, text, text_input}};
 
 
 
 
+// ============ CRATES ============
 use crate::
 {
     AppData, Message,
-    helpers::widget::{corner_radius, make_font, optional_length, optional_length_shrink},
+    helpers::widget::{corner_radius, make_font_family, optional_length, optional_length_shrink},
     ron::{SearchOrientation, SearchPosition},
 };
 
 
 
 
+// ============ FUNCTIONS ============
 pub fn build_search_bar(app: &AppData) -> Element<'_, Message>
 {
     let search_config = &app.config.search;
-    let is_focused = !app.query.is_empty();
+    // The launcher window holds exclusive keyboard focus the entire time it is
+    // open, so the search bar is always "focused" from the user's perspective.
+    // Using `!query.is_empty()` caused the focused colours to never appear on
+    // launch (before the user typed anything), making the bar look permanently
+    // unfocused.
+    let is_focused = true;
 
     let background = if is_focused 
     {
@@ -36,11 +44,20 @@ pub fn build_search_bar(app: &AppData) -> Element<'_, Message>
         search_config.border_color.to_iced()
     };
 
-    let font = make_font(&search_config.font_weight, &search_config.font_style);
-    let radius = search_config.border_radius;
+    let font           = make_font_family(&search_config.font_weight, &search_config.font_style, &search_config.font_family);
+    let radius         = search_config.border_radius;
     let submit_message = resolve_submit_message(app);
 
-    let input = text_input(&search_config.placeholder, &app.query)
+    let placeholder = if app.shell_mode
+    {
+        "Run command...".to_string()
+    }
+    else
+    {
+        search_config.placeholder.clone()
+    };
+
+    let input = text_input(&placeholder, &app.query)
         .id("search_input")
         .on_input(Message::QueryChanged)
         .on_submit(submit_message.clone())
@@ -83,14 +100,23 @@ pub fn build_search_bar(app: &AppData) -> Element<'_, Message>
 
 fn resolve_submit_message(app: &AppData) -> Message
 {
-    match app.filtered.get(app.selected) 
+    // In shell mode: if the query has spaces (i.e. has arguments) or no entry
+    // is selected, run the raw query string directly as a shell command.
+    if app.shell_mode && (app.query.contains(' ') || app.filtered.is_empty())
     {
-        Some(e) if e.exec.is_empty() => 
+        let query = app.query.trim().to_string();
+        if query.is_empty() { return Message::Nothing; }
+        return Message::Launch(query);
+    }
+
+    match app.filtered.get(app.selected)
+    {
+        Some(e) if e.exec.is_empty() =>
         {
             Message::CopyToClipboard(crate::helpers::update_helpers::calc_display_value(&e.name))
         }
         Some(e) => Message::Launch(e.exec.clone()),
-        None => Message::Nothing,
+        None    => Message::Nothing,
     }
 }
 
@@ -99,9 +125,10 @@ fn resolve_submit_message(app: &AppData) -> Message
 fn build_vertical_search<'a>(app: &'a AppData, background: iced::Color, border_color: iced::Color, submit_msg: Message) -> Element<'a, Message>
 {
     let search_config = &app.config.search;
-    let font = make_font(&search_config.font_weight, &search_config.font_style);
-    let radius = search_config.border_radius;
-    let display_text = if app.query.is_empty() { search_config.placeholder.clone() } else { app.query.clone() };
+    let font          = make_font_family(&search_config.font_weight, &search_config.font_style, &search_config.font_family);
+    let radius        = search_config.border_radius;
+    let placeholder   = if app.shell_mode { "Run command...".to_string() } else { search_config.placeholder.clone() };
+    let display_text  = if app.query.is_empty() { placeholder } else { app.query.clone() };
 
     let char_column: Element<Message> = 
     {
@@ -137,10 +164,10 @@ fn build_vertical_search<'a>(app: &'a AppData, background: iced::Color, border_c
         .style(|_theme, _status| iced::widget::text_input::Style 
         {
             background: iced::Background::Color(Color::TRANSPARENT),
-            icon: Color::TRANSPARENT,
+            icon:        Color::TRANSPARENT,
             placeholder: Color::TRANSPARENT,
-            value: Color::TRANSPARENT,
-            selection: Color::TRANSPARENT,
+            value:       Color::TRANSPARENT,
+            selection:   Color::TRANSPARENT,
             border: Border { color: Color::TRANSPARENT, width: 0.0, radius: Radius::default() },
         });
 
@@ -175,8 +202,8 @@ fn build_vertical_search<'a>(app: &'a AppData, background: iced::Color, border_c
 
 fn build_horizontal_search_with_icon<'a>(app: &'a AppData, input: iced::widget::TextInput<'a, Message>, background: iced::Color, border_color: iced::Color) -> Element<'a, Message>
 {
-    let search_config = &app.config.search;
-    let radius = search_config.border_radius;
+    let search_config  = &app.config.search;
+    let radius         = search_config.border_radius;
     let icon_element: Element<Message> = text(search_config.icon.clone()).size(search_config.text_size).color(search_config.icon_color.to_iced()).into();
     let bar_w = optional_length(search_config.width);
     let bar_h = optional_length_shrink(search_config.height);
@@ -188,10 +215,10 @@ fn build_horizontal_search_with_icon<'a>(app: &'a AppData, input: iced::widget::
             container(icon_element)
                 .padding(Padding 
                 {
-                    top: 0.0,
-                    right: 6.0,
+                    top:    0.0,
+                    right:  6.0,
                     bottom: 0.0,
-                    left: search_config.input_padding as f32
+                    left:   search_config.input_padding as f32
                 })
                 .align_y(Alignment::Center),
             input,
@@ -219,12 +246,12 @@ fn build_horizontal_search_with_icon<'a>(app: &'a AppData, input: iced::widget::
 fn wrap_search_bar_margin<'a>(app: &'a AppData, element: Element<'a, Message>) -> Element<'a, Message>
 {
     let search_config = &app.config.search;
-    let is_left = matches!(search_config.position, SearchPosition::Left | SearchPosition::TopLeft | SearchPosition::BottomLeft);
+    let is_left  = matches!(search_config.position, SearchPosition::Left | SearchPosition::TopLeft | SearchPosition::BottomLeft);
     let is_right = matches!(search_config.position, SearchPosition::Right | SearchPosition::TopRight | SearchPosition::BottomRight);
-    let is_side = is_left || is_right;
-    let margin = search_config.bottom_margin;
-    let bar_w = optional_length(search_config.width);
-    let bar_h = optional_length_shrink(search_config.height);
+    let is_side  = is_left || is_right;
+    let margin   = search_config.bottom_margin;
+    let bar_w    = optional_length(search_config.width);
+    let bar_h    = optional_length_shrink(search_config.height);
 
     let padding = if is_side 
     {

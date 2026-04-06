@@ -19,7 +19,7 @@ use crate::
         scroll::row_height,
         style::entry_button_style,
         text::apply_entry_text_rules,
-        widget::{corner_radius, horizontal_align, make_font},
+        widget::{corner_radius, horizontal_align, make_font_family},
     }, 
 };
 
@@ -45,7 +45,7 @@ struct EntryBadges<'a>
 // ============ FUNCTIONS ============
 pub fn build_results_block(app: &AppData) -> Element<'_, Message>
 {
-    let footer = build_footer(app);
+    let footer  = build_footer(app);
     let results = build_results(app);
 
     match app.config.footer.position 
@@ -73,17 +73,18 @@ pub fn build_results_block(app: &AppData) -> Element<'_, Message>
 
 fn build_results(app: &AppData) -> Element<'_, Message>
 {
-    if app.loading 
+    if app.loading
     {
-        return status_label(app, "Loading applications...");
+        let label = if app.shell_mode { "Loading commands..." } else { "Loading applications..." };
+        return status_label(app, label);
     }
-    if app.filtered.is_empty() 
+    if app.filtered.is_empty()
     {
         return status_label(app, "No results found");
     }
 
     let entry_buttons = build_entry_buttons(app);
-    let grid = arrange_into_grid(app, entry_buttons);
+    let grid          = arrange_into_grid(app, entry_buttons);
     build_scrollable(app, grid)
 }
 
@@ -113,11 +114,11 @@ fn build_entry_buttons(app: &AppData) -> Vec<Element<'_, Message>>
 fn build_entry_button<'a>(app: &'a AppData, index: usize, entry: &'a AppEntry) -> Element<'a, Message>
 {
     let is_selected = index == app.selected;
-    let is_calc = entry.exec.is_empty();
-    let icon    = build_icon_element(app, entry, is_selected, is_calc);
-    let label   = build_label_element(app, entry, is_selected);
-    let badges  = build_badge_elements(app, index, entry, is_calc);
-    let content = arrange_entry_content(app, is_selected, is_calc, icon, label, badges);
+    let is_calc     = entry.exec.is_empty();
+    let icon        = build_icon_element(app, entry, is_selected, is_calc);
+    let label       = build_label_element(app, entry, is_selected);
+    let badges      = build_badge_elements(app, index, entry, is_calc);
+    let content     = arrange_entry_content(app, is_selected, is_calc, icon, label, badges);
 
     let on_press = if is_calc 
     {
@@ -128,10 +129,10 @@ fn build_entry_button<'a>(app: &'a AppData, index: usize, entry: &'a AppEntry) -
         Message::Launch(entry.exec.clone())
     };
 
-    let padding = app.config.entry.padding;
+    let padding      = app.config.entry.padding;
     let style_config = app.config.clone();
 
-    button(content)
+    let btn = button(content)
         .on_press(on_press)
         .padding(Padding 
         {
@@ -141,8 +142,27 @@ fn build_entry_button<'a>(app: &'a AppData, index: usize, entry: &'a AppEntry) -
             left:   padding[3] as f32,
         })
         .width(Length::Fill)
-        .style(move |_theme, status| entry_button_style(status, is_selected, &style_config))
-        .into()
+        .style(move |_theme, status| entry_button_style(status, is_selected, &style_config));
+
+    if app.config.entry.show_separator && index > 0
+    {
+        let sep_color = app.config.entry.separator_color.to_iced();
+        let sep_w     = app.config.entry.separator_width;
+        let separator: Element<Message> = container(Space::new())
+            .width(Length::Fill)
+            .height(sep_w)
+            .style(move |_| container::Style 
+            {
+                background: Some(iced::Background::Color(sep_color)),
+                ..Default::default()
+            })
+            .into();
+        column![separator, btn].spacing(0).into()
+    }
+    else
+    {
+        btn.into()
+    }
 }
 
 
@@ -231,16 +251,17 @@ fn build_real_icon<'a>(entry: &'a AppEntry, icon_config: &crate::ron::IconConfig
 
 fn build_label_element<'a>(app: &'a AppData, entry: &'a AppEntry, is_selected: bool) -> Element<'a, Message> 
 {
-
     let entry_config = &app.config.entry;
-    let wrapping = if entry_config.wrap_word { Wrapping::Word } else { Wrapping::None };
+    let wrapping     = if entry_config.wrap_word { Wrapping::Word } else { Wrapping::None };
 
-    let name_text = apply_entry_text_rules(&entry.name, entry_config.name_max_chars, entry_config.elipsize_instead_of_wrapping, entry_config.wrap_word, &entry_config.ellipsis);
+    let name_text    = apply_entry_text_rules(&entry.name,    entry_config.name_max_chars,    entry_config.elipsize_instead_of_wrapping, entry_config.wrap_word, &entry_config.ellipsis);
     let comment_text = apply_entry_text_rules(&entry.comment, entry_config.comment_max_chars, entry_config.elipsize_instead_of_wrapping, entry_config.wrap_word, &entry_config.ellipsis);
+
     let name_color    = if is_selected { entry_config.selected_name_color.to_iced()    } else { entry_config.name_color.to_iced()    };
     let comment_color = if is_selected { entry_config.selected_comment_color.to_iced() } else { entry_config.comment_color.to_iced() };
-    let name_font    = make_font(&entry_config.name_font_weight,    &entry_config.name_font_style);
-    let comment_font = make_font(&entry_config.comment_font_weight, &entry_config.comment_font_style);
+
+    let name_font    = make_font_family(&entry_config.name_font_weight,    &entry_config.name_font_style,    &entry_config.name_font_family);
+    let comment_font = make_font_family(&entry_config.comment_font_weight, &entry_config.comment_font_style, &entry_config.comment_font_family);
 
     let name_element = iced::widget::text(name_text)
         .size(entry_config.name_size)
@@ -304,7 +325,7 @@ fn arrange_entry_content<'a>(app: &'a AppData, is_selected: bool, is_calc: bool,
 {
     let icon_config  = &app.config.icon;
     let entry_config = &app.config.entry;
-    let gap = if icon_config.show { icon_config.gap } else { 0 };
+    let gap          = if icon_config.show { icon_config.gap } else { 0 };
     let gap_h: Element<Message> = container(Space::new()).width(gap).into();
     let gap_v: Element<Message> = container(Space::new()).height(gap).into();
 
@@ -422,19 +443,19 @@ fn arrange_into_grid<'a>(app: &'a AppData, buttons: Vec<Element<'a, Message>>) -
 {
     let window_config = &app.config.window;
     let entry_config  = &app.config.entry;
-    let cols    = window_config.grid_side_items.max(1);
-    let max     = app.filtered.len().min(window_config.max_results);
-    let spacing = window_config.entry_spacing as f32;
+    let cols          = window_config.grid_side_items.max(1);
+    let max           = app.filtered.len().min(window_config.max_results);
+    let col_spacing   = window_config.grid_column_spacing as f32;
     let mut button_iter = buttons.into_iter();
     let mut grid_rows: Vec<Element<Message>> = Vec::new();
     let mut row_start = 0;
 
     while row_start < max 
     {
-        let row_end = (row_start + cols).min(max);
+        let row_end   = (row_start + cols).min(max);
         let row_slice = &app.filtered[row_start .. row_end];
         let row_has_comment = row_slice.iter().any(|e| entry_config.show_comment && !e.comment.is_empty());
-        let cell_height = row_height(entry_config, row_has_comment);
+        let cell_height     = row_height(entry_config, row_has_comment);
 
         let mut cells: Vec<Element<Message>> = button_iter
             .by_ref()
@@ -452,7 +473,7 @@ fn arrange_into_grid<'a>(app: &'a AppData, buttons: Vec<Element<'a, Message>>) -
             cells.push(container(Space::new()).width(Length::Fill).height(cell_height).into());
         }
 
-        grid_rows.push(row(cells).spacing(spacing).into());
+        grid_rows.push(row(cells).spacing(col_spacing).into());
         row_start = row_end;
     }
 
@@ -466,7 +487,7 @@ fn build_scrollable<'a>(app: &'a AppData, grid_rows: Vec<Element<'a, Message>>) 
     let scrollbar_config = &app.config.scrollbar;
     let window_config    = &app.config.window;
     let entry_config     = &app.config.entry;
-    let radius = scrollbar_config.border_radius;
+    let radius           = scrollbar_config.border_radius;
 
     let make_rail = |scroller_color: iced::Color| Rail 
     {

@@ -36,8 +36,21 @@ pub fn filter_entries(
 	frecency: &FrecencyStore,
 ) -> Vec<AppEntry>
 {
-	if query.is_empty() {
-		return sort_by_frecency(entries, frecency);
+	let behaviour = &config.behaviour;
+
+	if query.is_empty()
+	{
+		if !behaviour.show_on_empty_query
+		{
+			return Vec::new();
+		}
+		let all = sort_by_frecency(entries, frecency);
+		return cap_empty_results(all, config);
+	}
+
+	if query.chars().count() < behaviour.min_query_length
+	{
+		return Vec::new();
 	}
 
 	let mut results = score_and_sort(entries, query, config, frecency);
@@ -49,6 +62,21 @@ pub fn filter_entries(
 	}
 
 	results
+}
+
+
+fn cap_empty_results(mut entries: Vec<AppEntry>, config: &LauncherConfig) -> Vec<AppEntry>
+{
+	let cap = if config.behaviour.max_empty_results > 0
+	{
+		config.behaviour.max_empty_results
+	}
+	else
+	{
+		config.window.max_results
+	};
+	entries.truncate(cap);
+	entries
 }
 
 
@@ -172,14 +200,7 @@ fn score_entry(
 }
 
 
-pub fn classify_exact_tier(
-	name: &str,
-	query: &str,
-	name_exact: bool,
-	keyword_exact: bool,
-	exec_exact: bool,
-	comment_exact: bool,
-) -> u8
+pub fn classify_exact_tier(name: &str, query: &str, name_exact: bool, keyword_exact: bool, exec_exact: bool, comment_exact: bool) -> u8
 {
 	if name.starts_with(query) { 0 }
 	else if name_exact         { 1 }

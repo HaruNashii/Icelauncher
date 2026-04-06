@@ -33,7 +33,7 @@ pub fn on_entries_loaded(app: &mut AppData, entries: Vec<AppEntry>) -> Task<Mess
 }
 
 
-pub fn on_query_changed(app: &mut AppData, query: String)
+pub fn on_query_changed(app: &mut AppData, query: String) -> Task<Message>
 {
 	app.filtered = filter_entries(&app.entries, &query, &app.config, &app.frecency);
 	app.query = query;
@@ -41,6 +41,12 @@ pub fn on_query_changed(app: &mut AppData, query: String)
 	app.scroll_offset = 0.0;
 	app.viewport_h = 0.0;
 	app.content_h = 0.0;
+
+	// Reset the scrollable widget's actual position, not just our cached state.
+	operation::snap_to(
+		Id::new("results_scroll"),
+		scrollable::RelativeOffset { x: 0.0, y: 0.0 },
+	)
 }
 
 
@@ -153,7 +159,16 @@ pub fn on_copy_to_clipboard(app: &mut AppData, value: String) -> Task<Message>
 
 pub fn on_launch(app: &mut AppData, exec: String) -> Task<Message>
 {
-	if exec.is_empty() {
+	if exec.is_empty()
+	{
+		if app.shell_mode
+		{
+			// User hit Enter with no selection — run whatever they typed as-is.
+			let query = app.query.trim().to_string();
+			if query.is_empty() { return Task::none(); }
+			record_and_launch(app, &query);
+			return exit_if_configured(app);
+		}
 		let Some(entry) = app.filtered.get(app.selected) else { return Task::none() };
 		let value = calc_display_value(&entry.name);
 		return update(app, Message::CopyToClipboard(value));
@@ -169,14 +184,25 @@ pub fn record_and_launch(app: &mut AppData, exec: &str)
 	app.frecency.record_in_memory(exec);
 	app.last_launched = Some(exec.to_string());
 
-	let mut store = app.frecency.clone();
-	let exec_owned = exec.to_string();
+	// Persist the updated frecency data in the background.
+	// We already called record_in_memory above, so just clone the current
+	// state and save it — do NOT call save_record (which would call
+	// record_in_memory a second time, double-counting this launch).
+	let store = app.frecency.clone();
 	tokio::spawn(async move {
-		tokio::task::spawn_blocking(move || store.save_record(&exec_owned)).await.ok();
+		tokio::task::spawn_blocking(move || store.save()).await.ok();
 	});
 
-	let is_terminal =
-		app.filtered.iter().find(|e| e.exec == exec).map(|e| e.terminal).unwrap_or(false);
+	// In shell mode every entry is a raw command — never wrap with a terminal prefix
+	// unless the user typed something that matches a known terminal=true .desktop entry.
+	let is_terminal = if app.shell_mode
+	{
+		false
+	}
+	else
+	{
+		app.filtered.iter().find(|e| e.exec == exec).map(|e| e.terminal).unwrap_or(false)
+	};
 
 	launch_app(exec, &app.config, is_terminal);
 }

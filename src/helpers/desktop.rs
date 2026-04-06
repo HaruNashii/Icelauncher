@@ -27,6 +27,69 @@ pub fn load_apps_stream() -> impl futures::Stream<Item = Message>
 }
 
 
+pub fn load_shell_commands_stream() -> impl futures::Stream<Item = Message>
+{
+	async_stream::stream! {
+		let entries = tokio::task::spawn_blocking(scan_shell_commands)
+			.await
+			.unwrap_or_else(|e| {
+				eprintln!("[icelauncher] Failed to scan shell commands: {e}");
+				vec![]
+			});
+		yield Message::EntriesLoaded(entries);
+	}
+}
+
+
+/// Collect all executables reachable via $PATH and return them as AppEntry items.
+pub fn scan_shell_commands() -> Vec<AppEntry>
+{
+	let path_var = std::env::var("PATH").unwrap_or_default();
+	let mut seen = std::collections::HashSet::new();
+	let mut entries: Vec<AppEntry> = Vec::new();
+
+	for dir in path_var.split(':').filter(|d| !d.is_empty())
+	{
+		let Ok(dir_entries) = std::fs::read_dir(dir) else { continue };
+		for file in dir_entries.flatten()
+		{
+			let path = file.path();
+			// Must be executable and not a directory.
+			if !is_executable(&path) { continue; }
+			let Some(name) = path.file_name().and_then(|n| n.to_str()) else { continue };
+			if !seen.insert(name.to_string()) { continue; }
+
+			let entry = AppEntry {
+				name: name.to_string(),
+				exec: name.to_string(),
+				comment: String::new(),
+				icon: String::new(),
+				icon_path: None,
+				keywords: Vec::new(),
+				terminal: false,
+				name_lc: String::new(),
+				exec_lc: String::new(),
+				comment_lc: String::new(),
+				keywords_lc: Vec::new(),
+			};
+			entries.push(entry.with_normalized());
+		}
+	}
+
+	entries.sort_unstable_by(|a, b| a.name_lc.cmp(&b.name_lc));
+	entries
+}
+
+
+fn is_executable(path: &Path) -> bool
+{
+	use std::os::unix::fs::PermissionsExt;
+	let Ok(meta) = path.metadata() else { return false };
+	if meta.is_dir() { return false; }
+	meta.permissions().mode() & 0o111 != 0
+}
+
+
 pub fn scan_desktop_files() -> Vec<AppEntry>
 {
 	let search_dirs = application_search_dirs();
@@ -67,76 +130,131 @@ pub fn scan_desktop_files() -> Vec<AppEntry>
 
 pub fn parse_desktop_file(path: &Path) -> Option<AppEntry>
 {
+	parse_desktop_file_for_session(path, current_desktop_names().as_deref())
+}
+
+
+pub fn parse_desktop_file_for_session(path: &Path, current_desktop: Option<&[String]>) -> Option<AppEntry>
+{
 	let bytes = std::fs::read(path).ok()?;
 	let content = String::from_utf8_lossy(&bytes);
 
+	// Detect the user's locale (e.g. "en_US", "fr_FR") for Name[xx] parsing.
+	let locale = std::env::var("LANG")
+		.unwrap_or_default()
+		.split('.')
+		.next()
+		.unwrap_or("")
+		.to_string();
+	// Also build a short form like "en" from "en_US".
+	let locale_short: String = locale.split('_').next().unwrap_or("").to_string();
+
 	let mut name = String::new();
+	let mut name_locale = String::new();     // Name[xx_YY]=
+	let mut name_locale_short = String::new(); // Name[xx]=
 	let mut exec = String::new();
 	let mut comment = String::new();
 	let mut icon = String::new();
 	let mut keywords = Vec::new();
 	let mut terminal = false;
 	let mut no_display = false;
+	let mut hidden = false;
+	let mut only_show_in: Option<Vec<String>> = None;
+	let mut not_show_in: Vec<String> = Vec::new();
 	let mut in_desktop_entry = false;
 
-	for raw_line in content.lines() {
+	for raw_line in content.lines()
+	{
 		let line = raw_line.trim();
 
-		if line == "[Desktop Entry]" {
+		if line == "[Desktop Entry]"
+		{
 			in_desktop_entry = true;
 			continue;
 		}
-		if line.starts_with('[') {
+		if line.starts_with('[')
+		{
 			in_desktop_entry = false;
 			continue;
 		}
-		if !in_desktop_entry {
+		if !in_desktop_entry
+		{
 			continue;
 		}
 
-		if line.starts_with("Type=") && !line.contains("Application") {
+		if line.starts_with("Type=") && !line.contains("Application")
+		{
 			return None;
 		}
-		if line == "NoDisplay=true" {
-			no_display = true;
+		if line == "NoDisplay=true"  { no_display = true; }
+		if line == "Hidden=true"     { hidden = true; }
+		if line == "Terminal=true"   { terminal = true; }
+
+		if let Some(v) = line.strip_prefix("OnlyShowIn=")
+		{
+			only_show_in = Some(parse_semicolon_list(v));
 		}
-		if line == "Terminal=true" {
-			terminal = true;
+		if let Some(v) = line.strip_prefix("NotShowIn=")
+		{
+			not_show_in = parse_semicolon_list(v);
 		}
 
-		if let Some(v) = line.strip_prefix("Name=")
-			&& name.is_empty()
+		// Locale-aware Name parsing: prefer Name[xx_YY], fall back to Name[xx], then Name.
+		if let Some(v) = line.strip_prefix("Name=") && name.is_empty()
 		{
 			name = v.to_string();
 		}
-		if let Some(v) = line.strip_prefix("Exec=")
-			&& exec.is_empty()
+		if !locale.is_empty()
+		{
+			let key_full  = format!("Name[{}]=", locale);
+			let key_short = format!("Name[{}]=", locale_short);
+			if let Some(v) = line.strip_prefix(key_full.as_str())  && name_locale.is_empty()       { name_locale = v.to_string(); }
+			if let Some(v) = line.strip_prefix(key_short.as_str()) && name_locale_short.is_empty() { name_locale_short = v.to_string(); }
+		}
+
+		if let Some(v) = line.strip_prefix("Exec=") && exec.is_empty()
 		{
 			exec = sanitize_exec(v);
 		}
-		if let Some(v) = line.strip_prefix("Comment=")
-			&& comment.is_empty()
+		if let Some(v) = line.strip_prefix("Comment=") && comment.is_empty()
 		{
 			comment = v.to_string();
 		}
-		if let Some(v) = line.strip_prefix("Icon=")
-			&& icon.is_empty()
+		if let Some(v) = line.strip_prefix("Icon=") && icon.is_empty()
 		{
 			icon = v.to_string();
 		}
-		if let Some(v) = line.strip_prefix("Keywords=")
-			&& keywords.is_empty()
+		if let Some(v) = line.strip_prefix("Keywords=") && keywords.is_empty()
 		{
 			keywords = parse_keywords(v);
 		}
 	}
 
-	if no_display || name.is_empty() || exec.is_empty() {
+	if no_display || hidden || name.is_empty() || exec.is_empty()
+	{
 		return None;
 	}
 
+	// OnlyShowIn / NotShowIn filtering against $XDG_CURRENT_DESKTOP.
+	if let Some(desktop) = current_desktop
+	{
+		if let Some(ref only) = only_show_in && !desktop.iter().any(|d| only.iter().any(|o| o.eq_ignore_ascii_case(d)))
+		{
+		        return None;
+		}
+		if !not_show_in.is_empty() && desktop.iter().any(|d| not_show_in.iter().any(|n| n.eq_ignore_ascii_case(d)))
+		{
+			return None;
+		}
+	}
+
+	// Pick the most specific locale name available.
+	let resolved_name = if !name_locale.is_empty()       { name_locale }
+	                    else if !name_locale_short.is_empty() { name_locale_short }
+	                    else                              { name };
+
 	Some(AppEntry {
-		name,
+		name: resolved_name,
 		exec,
 		comment,
 		icon,
@@ -148,6 +266,21 @@ pub fn parse_desktop_file(path: &Path) -> Option<AppEntry>
 		comment_lc: String::new(),
 		keywords_lc: Vec::new(),
 	})
+}
+
+
+/// Parse $XDG_CURRENT_DESKTOP into individual names (colon-separated per spec).
+fn current_desktop_names() -> Option<Vec<String>>
+{
+	let val = std::env::var("XDG_CURRENT_DESKTOP").ok()?;
+	if val.is_empty() { return None; }
+	Some(val.split(':').map(|s| s.trim().to_string()).filter(|s| !s.is_empty()).collect())
+}
+
+
+fn parse_semicolon_list(raw: &str) -> Vec<String>
+{
+	raw.split(';').map(|s| s.trim().to_string()).filter(|s| !s.is_empty()).collect()
 }
 
 
@@ -194,19 +327,36 @@ pub fn sanitize_exec(exec: &str) -> String
 fn application_search_dirs() -> Vec<PathBuf>
 {
 	let mut dirs = Vec::new();
+	let home = home::home_dir().unwrap_or_default();
 
-	if let Some(home) = home::home_dir() {
-		dirs.push(home.join(".local/share/applications"));
-	}
+	// User installs.
+	dirs.push(home.join(".local/share/applications"));
 
+	// Flatpak user exports.
+	dirs.push(home.join(".local/share/flatpak/exports/share/applications"));
+
+	// XDG_DATA_DIRS (includes system Flatpak exports when set by the session).
 	if let Ok(xdg_dirs) = std::env::var("XDG_DATA_DIRS") {
-		for path in xdg_dirs.split(':') {
+		for path in xdg_dirs.split(':').filter(|s| !s.is_empty()) {
 			dirs.push(PathBuf::from(path).join("applications"));
 		}
 	}
 
+	// Standard system paths.
 	dirs.push(PathBuf::from("/usr/local/share/applications"));
 	dirs.push(PathBuf::from("/usr/share/applications"));
+
+	// System-wide Flatpak exports (when XDG_DATA_DIRS doesn't include it).
+	dirs.push(PathBuf::from("/var/lib/flatpak/exports/share/applications"));
+
+	// Distrobox host — apps exported from the host container.
+	dirs.push(PathBuf::from("/run/host/usr/share/applications"));
+	dirs.push(PathBuf::from("/run/host/usr/local/share/applications"));
+
+	// Deduplicate while preserving priority order.
+	let mut seen = std::collections::HashSet::new();
+	dirs.retain(|p| seen.insert(p.clone()));
+
 	dirs
 }
 
@@ -225,5 +375,9 @@ fn file_stem(path: &Path) -> String
 
 fn parse_keywords(raw: &str) -> Vec<String>
 {
-	raw.split(';').map(|s| s.trim().to_lowercase()).filter(|s| !s.is_empty()).collect()
+	// Preserve the original casing from the .desktop file.
+	// The lowercase version is produced later by AppEntry::with_normalized()
+	// into keywords_lc, which is what case-insensitive search uses.
+	// Lowercasing here would break case-sensitive keyword searches.
+	raw.split(';').map(|s| s.trim().to_string()).filter(|s| !s.is_empty()).collect()
 }

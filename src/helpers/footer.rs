@@ -1,5 +1,5 @@
 // ============ IMPORTS ============
-use iced::{Alignment, Element, Font, Length, Padding, widget::{Space, column, container, row, text}};
+use iced::{Alignment, Element, Font, Length, Padding, widget::{Space, column, container, row, text}}; 
 use iced_layershell::reexport::core::Border;
 
 
@@ -22,9 +22,9 @@ pub fn build_footer(app: &AppData) -> Element<'_, Message>
         return Space::new().into();
     }
 
-    let hint_text = resolve_hint_text(footer_config);
+    let hint_text  = resolve_hint_text(footer_config, app.shell_mode);
     let count_text = resolve_count_text(app);
-    let font = make_font(&footer_config.font_weight, &footer_config.font_style);
+    let font       = make_font(&footer_config.font_weight, &footer_config.font_style);
     let is_vertical = footer_config.text_orientation == FooterOrientation::Vertical;
 
     let hint_element = if footer_config.show_hint 
@@ -45,17 +45,17 @@ pub fn build_footer(app: &AppData) -> Element<'_, Message>
         Space::new().into()
     };
 
-    let fp = footer_config.padding;
-    let fbr = footer_config.border_radius;
+    let fp    = footer_config.padding;
+    let fbr   = footer_config.border_radius;
     let fc_bg = footer_config.background_color.to_iced();
     let fc_bc = footer_config.border_color.to_iced();
     let fc_bw = footer_config.border_width;
     let inner_pad = Padding 
     {
-        top: fp[0] as f32 + footer_config.top_margin,
-        right: fp[1] as f32,
+        top:    fp[0] as f32 + footer_config.top_margin,
+        right:  fp[1] as f32,
         bottom: fp[2] as f32,
-        left: fp[3] as f32,
+        left:   fp[3] as f32,
     };
 
     let is_sidebar = matches!(footer_config.position, FooterPosition::Left | FooterPosition::Right);
@@ -92,15 +92,19 @@ pub fn build_footer(app: &AppData) -> Element<'_, Message>
 
 
 
-fn resolve_hint_text(footer_config: &crate::ron::FooterConfig) -> String
+fn resolve_hint_text(footer_config: &crate::ron::FooterConfig, shell_mode: bool) -> String
 {
-    if footer_config.hint_text.is_empty() 
+    if !footer_config.hint_text.is_empty()
+    {
+        return footer_config.hint_text.clone();
+    }
+    if shell_mode
+    {
+        "↑↓ navigate  •  Enter run  •  Alt+1-9 quick run  •  Esc close  •  [shell mode]".to_string()
+    }
+    else
     {
         "↑↓ navigate  •  Enter launch  •  Alt+1-9 quick launch  •  Alt+L relaunch  •  Esc close".to_string()
-    } 
-    else 
-    {
-        footer_config.hint_text.clone()
     }
 }
 
@@ -111,13 +115,26 @@ fn resolve_count_text(app: &AppData) -> String
     let shown = app.filtered.len().min(app.config.window.max_results);
     let total = app.filtered.len();
 
-    if total > app.config.window.max_results 
+    if total > app.config.window.max_results
     {
-        format!("{} / {} results", shown, total)
+        // More results than the window can display: show "X / Y results"
+        app.config.footer.count_format
+            .replace("{shown}", &shown.to_string())
+            .replace("{total}", &total.to_string())
     }
-    else 
+    else if total == 1
     {
-        format!("{} result{}", total, if total == 1 { "" } else { "s" })
+        // Exactly one result: use the singular format, e.g. "1 result"
+        app.config.footer.single_format
+            .replace("{total}", &total.to_string())
+    }
+    else
+    {
+        // Multiple results that all fit: use count_format without a cap note,
+        // replacing {shown} and {total} with the same value.
+        app.config.footer.count_format
+            .replace("{shown}", &total.to_string())
+            .replace("{total}", &total.to_string())
     }
 }
 

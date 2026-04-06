@@ -23,6 +23,7 @@ const DEFAULT_CONFIG_TEXT: &str = r#"LauncherConfig
         section_spacing:    0,
         entry_spacing:      3,
         grid_side_items:    1,
+        grid_column_spacing: 0,
 
         border_radius:      (10.0, 10.0, 10.0, 10.0),
         border_width:       1.0,
@@ -33,6 +34,12 @@ const DEFAULT_CONFIG_TEXT: &str = r#"LauncherConfig
         shadow_offset_x:    0.0,
         shadow_offset_y:    4.0,
         shadow_blur:        20.0,
+
+        anchor:             Center,
+        margin_top:         0,
+        margin_bottom:      0,
+        margin_left:        0,
+        margin_right:       0,
     ),
 
     scrollbar:
@@ -77,6 +84,7 @@ const DEFAULT_CONFIG_TEXT: &str = r#"LauncherConfig
 
         font_weight:               Normal,
         font_style:                Normal,
+        font_family:               "",
 
         position:                  Top,
         orientation:               Horizontal,
@@ -94,6 +102,7 @@ const DEFAULT_CONFIG_TEXT: &str = r#"LauncherConfig
         hovered_name_color:     RGB((255, 255, 255)),
         name_font_weight:       Normal,
         name_font_style:        Normal,
+        name_font_family:       "",
         name_align:             Left,
         name_max_chars:         55,
 
@@ -103,6 +112,7 @@ const DEFAULT_CONFIG_TEXT: &str = r#"LauncherConfig
         hovered_comment_color:  RGB((179, 179, 179)),
         comment_font_weight:    Normal,
         comment_font_style:     Normal,
+        comment_font_family:    "",
         comment_align:          Left,
         comment_max_chars:      55,
         show_comment:           true,
@@ -123,17 +133,30 @@ const DEFAULT_CONFIG_TEXT: &str = r#"LauncherConfig
         border_color:           RGBA((0, 0, 0, 0)),
         selected_border_color:  RGBA((28, 113, 216, 50)),
         hovered_border_color:   RGBA((0, 0, 0, 0)),
+        pressed_border_color:   RGBA((0, 0, 0, 0)),
         border_width:           1.0,
         border_radius:          (6.0, 6.0, 6.0, 6.0),
 
-        shadow_color:           RGBA((0, 0, 0, 50)),
-        shadow_offset_x:        0.0,
-        shadow_offset_y:        1.0,
-        shadow_blur:            3.0,
+        shadow_color:               RGBA((0, 0, 0, 50)),
+        shadow_offset_x:            0.0,
+        shadow_offset_y:            1.0,
+        shadow_blur:                3.0,
+        selected_shadow_color:      RGBA((0, 0, 0, 50)),
+        selected_shadow_offset_x:   0.0,
+        selected_shadow_offset_y:   1.0,
+        selected_shadow_blur:       3.0,
+        hovered_shadow_color:       RGBA((0, 0, 0, 50)),
+        hovered_shadow_offset_x:    0.0,
+        hovered_shadow_offset_y:    1.0,
+        hovered_shadow_blur:        3.0,
 
         wrap_word:                      false,
         elipsize_instead_of_wrapping:   true,
         ellipsis:                       "...",
+
+        show_separator:     false,
+        separator_color:    RGBA((80, 80, 80, 60)),
+        separator_width:    1.0,
     ),
 
     icon:
@@ -147,6 +170,7 @@ const DEFAULT_CONFIG_TEXT: &str = r#"LauncherConfig
         padding:               (0, 0),
         opacity:               1.0,
         selected_opacity:      1.0,
+        hovered_opacity:       1.0,
 
         background_color:      HEX("303030"),
         hovered_color:         HEX("303030"),
@@ -157,6 +181,7 @@ const DEFAULT_CONFIG_TEXT: &str = r#"LauncherConfig
 
         border_color:          HEX("3d3d3d"),
         selected_border_color: HEX("1c71d8"),
+        hovered_border_color:  HEX("3d3d3d"),
         border_width:          1.0,
         border_radius:         (6.0, 6.0, 6.0, 6.0),
     ),
@@ -167,6 +192,8 @@ const DEFAULT_CONFIG_TEXT: &str = r#"LauncherConfig
         show_hint:        true,
         hint_text:        "",
         show_count:       true,
+        count_format:     "{shown} / {total} results",
+        single_format:    "{total} result",
         text_size:        11,
         text_color:       RGB((179, 179, 179)),
         hint_color:       RGB((179, 179, 179)),
@@ -199,6 +226,21 @@ const DEFAULT_CONFIG_TEXT: &str = r#"LauncherConfig
         calc_enabled:           true,
         copy_feedback_text:     "Copied!",
         copy_feedback_seconds:  2.0,
+
+        min_query_length:       0,
+        show_on_empty_query:    true,
+        max_empty_results:      0,
+    ),
+
+    keybinds:
+    (
+        close:              ["Escape"],
+        select_up:          ["ArrowUp"],
+        select_down:        ["ArrowDown"],
+        select_left:        ["ArrowLeft"],
+        select_right:       ["ArrowRight", "Tab"],
+        launch_alt_prefix:  "Alt",
+        relaunch_key:       "l",
     ),
 
     background_images: [],
@@ -297,6 +339,22 @@ pub enum LabelPosition
     Above,
 }
 
+/// Anchor position for the launcher window on screen.
+#[derive(Default, Clone, Debug, PartialEq, Deserialize, Serialize)]
+pub enum WindowAnchor
+{
+    #[default]
+    Center,
+    Top,
+    Bottom,
+    Left,
+    Right,
+    TopLeft,
+    TopRight,
+    BottomLeft,
+    BottomRight,
+}
+
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(default)]
 pub struct ScrollbarConfig
@@ -350,6 +408,7 @@ pub struct WindowConfig
     pub section_spacing: u32,
     pub entry_spacing: u32,
     pub grid_side_items: usize,
+    pub grid_column_spacing: u32,
     pub border_radius: [f32; 4],
     pub border_width: f32,
     pub border_color: ColorType,
@@ -358,6 +417,11 @@ pub struct WindowConfig
     pub shadow_offset_x: f32,
     pub shadow_offset_y: f32,
     pub shadow_blur: f32,
+    pub anchor: WindowAnchor,
+    pub margin_top: u32,
+    pub margin_bottom: u32,
+    pub margin_left: u32,
+    pub margin_right: u32,
 }
 
 impl Default for WindowConfig
@@ -373,6 +437,7 @@ impl Default for WindowConfig
             section_spacing: 0,
             entry_spacing: 3,
             grid_side_items: 1,
+            grid_column_spacing: 0,
             border_radius: [10.0, 10.0, 10.0, 10.0],
             border_width: 1.0,
             border_color: hex_color("3d3d3d"),
@@ -381,6 +446,11 @@ impl Default for WindowConfig
             shadow_offset_x: 0.0,
             shadow_offset_y: 4.0,
             shadow_blur: 20.0,
+            anchor: WindowAnchor::Center,
+            margin_top: 0,
+            margin_bottom: 0,
+            margin_left: 0,
+            margin_right: 0,
         }
     }
 }
@@ -428,6 +498,7 @@ pub struct SearchConfig
     pub icon_color: ColorType,
     pub font_weight: FontWeight,
     pub font_style: FontStyle,
+    pub font_family: String,
     pub position: SearchPosition,
     pub orientation: SearchOrientation,
     pub width: u32,
@@ -459,6 +530,7 @@ impl Default for SearchConfig
             icon_color: ColorType::RGB([179, 179, 179]),
             font_weight: FontWeight::Normal,
             font_style: FontStyle::Normal,
+            font_family: String::new(),
             position: SearchPosition::Top,
             orientation: SearchOrientation::Horizontal,
             width: 0,
@@ -479,6 +551,7 @@ pub struct EntryConfig
     pub hovered_name_color: ColorType,
     pub name_font_weight: FontWeight,
     pub name_font_style: FontStyle,
+    pub name_font_family: String,
     pub name_align: TextAlign,
     pub name_max_chars: usize,
 
@@ -488,6 +561,7 @@ pub struct EntryConfig
     pub hovered_comment_color: ColorType,
     pub comment_font_weight: FontWeight,
     pub comment_font_style: FontStyle,
+    pub comment_font_family: String,
     pub comment_align: TextAlign,
     pub comment_max_chars: usize,
     pub show_comment: bool,
@@ -508,6 +582,7 @@ pub struct EntryConfig
     pub border_color: ColorType,
     pub selected_border_color: ColorType,
     pub hovered_border_color: ColorType,
+    pub pressed_border_color: ColorType,
     pub border_width: f32,
     pub border_radius: [f32; 4],
 
@@ -515,16 +590,29 @@ pub struct EntryConfig
     pub shadow_offset_x: f32,
     pub shadow_offset_y: f32,
     pub shadow_blur: f32,
+    pub selected_shadow_color: ColorType,
+    pub selected_shadow_offset_x: f32,
+    pub selected_shadow_offset_y: f32,
+    pub selected_shadow_blur: f32,
+    pub hovered_shadow_color: ColorType,
+    pub hovered_shadow_offset_x: f32,
+    pub hovered_shadow_offset_y: f32,
+    pub hovered_shadow_blur: f32,
 
     pub wrap_word: bool,
     pub elipsize_instead_of_wrapping: bool,
     pub ellipsis: String,
+
+    pub show_separator: bool,
+    pub separator_color: ColorType,
+    pub separator_width: f32,
 }
 
 impl Default for EntryConfig
 {
     fn default() -> Self
     {
+        let default_shadow = ColorType::RGBA([0, 0, 0, 50]);
         Self 
         {
             name_size: 14,
@@ -533,6 +621,7 @@ impl Default for EntryConfig
             hovered_name_color: ColorType::RGB([255, 255, 255]),
             name_font_weight: FontWeight::Normal,
             name_font_style: FontStyle::Normal,
+            name_font_family: String::new(),
             name_align: TextAlign::Left,
             name_max_chars: 55,
 
@@ -542,6 +631,7 @@ impl Default for EntryConfig
             hovered_comment_color: ColorType::RGB([179, 179, 179]),
             comment_font_weight: FontWeight::Normal,
             comment_font_style: FontStyle::Normal,
+            comment_font_family: String::new(),
             comment_align: TextAlign::Left,
             comment_max_chars: 55,
             show_comment: true,
@@ -562,17 +652,30 @@ impl Default for EntryConfig
             border_color: ColorType::RGBA([0, 0, 0, 0]),
             selected_border_color: ColorType::RGBA([28, 113, 216, 50]),
             hovered_border_color: ColorType::RGBA([0, 0, 0, 0]),
+            pressed_border_color: ColorType::RGBA([0, 0, 0, 0]),
             border_width: 1.0,
             border_radius: [6.0, 6.0, 6.0, 6.0],
 
-            shadow_color: ColorType::RGBA([0, 0, 0, 50]),
+            shadow_color: default_shadow,
             shadow_offset_x: 0.0,
             shadow_offset_y: 1.0,
             shadow_blur: 3.0,
+            selected_shadow_color: default_shadow,
+            selected_shadow_offset_x: 0.0,
+            selected_shadow_offset_y: 1.0,
+            selected_shadow_blur: 3.0,
+            hovered_shadow_color: default_shadow,
+            hovered_shadow_offset_x: 0.0,
+            hovered_shadow_offset_y: 1.0,
+            hovered_shadow_blur: 3.0,
 
             wrap_word: false,
             elipsize_instead_of_wrapping: true,
             ellipsis: "...".to_string(),
+
+            show_separator: false,
+            separator_color: ColorType::RGBA([80, 80, 80, 60]),
+            separator_width: 1.0,
         }
     }
 }
@@ -590,6 +693,7 @@ pub struct IconConfig
     pub padding: [u32; 2],
     pub opacity: f32,
     pub selected_opacity: f32,
+    pub hovered_opacity: f32,
     pub background_color: ColorType,
     pub hovered_color: ColorType,
     pub selected_color: ColorType,
@@ -598,6 +702,7 @@ pub struct IconConfig
     pub hovered_icon_color: ColorType,
     pub border_color: ColorType,
     pub selected_border_color: ColorType,
+    pub hovered_border_color: ColorType,
     pub border_width: f32,
     pub border_radius: [f32; 4],
 }
@@ -617,6 +722,7 @@ impl Default for IconConfig
             padding: [0, 0],
             opacity: 1.0,
             selected_opacity: 1.0,
+            hovered_opacity: 1.0,
             background_color: hex_color("303030"),
             hovered_color: hex_color("303030"),
             selected_color: hex_color("1c71d8"),
@@ -625,6 +731,7 @@ impl Default for IconConfig
             hovered_icon_color: hex_color("1c71d8"),
             border_color: hex_color("3d3d3d"),
             selected_border_color: hex_color("1c71d8"),
+            hovered_border_color: hex_color("3d3d3d"),
             border_width: 1.0,
             border_radius: [6.0, 6.0, 6.0, 6.0],
         }
@@ -657,6 +764,10 @@ pub struct FooterConfig
     pub show_hint: bool,
     pub hint_text: String,
     pub show_count: bool,
+    /// Template for count when shown < total. Supports {shown} and {total}.
+    pub count_format: String,
+    /// Template for count when all results fit. Supports {total}.
+    pub single_format: String,
     pub text_size: u32,
     pub text_color: ColorType,
     pub hint_color: ColorType,
@@ -685,6 +796,8 @@ impl Default for FooterConfig
             show_hint: true,
             hint_text: String::new(),
             show_count: true,
+            count_format: "{shown} / {total} results".into(),
+            single_format: "{total} result".into(),
             text_size: 11,
             text_color: ColorType::RGB([179, 179, 179]),
             hint_color: ColorType::RGB([179, 179, 179]),
@@ -719,6 +832,12 @@ pub struct SearchBehaviourConfig
     pub calc_enabled: bool,
     pub copy_feedback_text: String,
     pub copy_feedback_seconds: f32,
+    /// Minimum characters typed before results appear.
+    pub min_query_length: usize,
+    /// Show all apps when query is empty.
+    pub show_on_empty_query: bool,
+    /// Max results when query is empty (0 = same as max_results).
+    pub max_empty_results: usize,
 }
 
 impl Default for SearchBehaviourConfig
@@ -737,6 +856,42 @@ impl Default for SearchBehaviourConfig
             calc_enabled: true,
             copy_feedback_text: "Copied!".into(),
             copy_feedback_seconds: 2.0,
+            min_query_length: 0,
+            show_on_empty_query: true,
+            max_empty_results: 0,
+        }
+    }
+}
+
+/// User-configurable keybinds.
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(default)]
+pub struct KeybindConfig
+{
+    pub close: Vec<String>,
+    pub select_up: Vec<String>,
+    pub select_down: Vec<String>,
+    pub select_left: Vec<String>,
+    pub select_right: Vec<String>,
+    /// Modifier name used for Alt+1-9 quick-launch (e.g. "Alt").
+    pub launch_alt_prefix: String,
+    /// Character key for relaunch shortcut when modifier is held (e.g. "l").
+    pub relaunch_key: String,
+}
+
+impl Default for KeybindConfig
+{
+    fn default() -> Self
+    {
+        Self 
+        {
+            close: vec!["Escape".into()],
+            select_up: vec!["ArrowUp".into()],
+            select_down: vec!["ArrowDown".into()],
+            select_left: vec!["ArrowLeft".into()],
+            select_right: vec!["ArrowRight".into(), "Tab".into()],
+            launch_alt_prefix: "Alt".into(),
+            relaunch_key: "l".into(),
         }
     }
 }
@@ -809,6 +964,7 @@ pub struct LauncherConfig
     pub icon: IconConfig,
     pub footer: FooterConfig,
     pub behaviour: SearchBehaviourConfig,
+    pub keybinds: KeybindConfig,
     pub background_images: Vec<BackgroundImage>,
 }
 
@@ -874,6 +1030,3 @@ fn write_default_config(path: &PathBuf) -> std::io::Result<()>
     file.write_all(DEFAULT_CONFIG_TEXT.as_bytes())?;
     Ok(())
 }
-
-
-

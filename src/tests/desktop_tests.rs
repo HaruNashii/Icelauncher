@@ -179,13 +179,19 @@ fn parse_only_first_name_is_used()
 }
 
 #[test]
-fn parse_keywords_lowercased_and_filtered()
+fn parse_keywords_preserves_case_and_filters_empty()
 {
     let entry =
         parse("[Desktop Entry]\nName=App\nExec=app\nType=Application\nKeywords=FOO;Bar;;baz;\n")
             .unwrap();
-    // Empty segments filtered, all lowercased
-    assert_eq!(entry.keywords, vec!["foo", "bar", "baz"]);
+    // parse_desktop_file preserves original casing and filters empty segments.
+    // keywords_lc is populated later by with_normalized(), not by the parser.
+    assert_eq!(entry.keywords, vec!["FOO", "Bar", "baz"]);
+    assert!(entry.keywords_lc.is_empty());
+
+    // Verify with_normalized produces the correct lowercased version.
+    let normalized = entry.with_normalized();
+    assert_eq!(normalized.keywords_lc, vec!["foo", "bar", "baz"]);
 }
 
 #[test]

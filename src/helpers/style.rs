@@ -43,17 +43,13 @@ pub fn entry_button_style(
 			color: entry_border_color(status, is_selected, config),
 			width: entry.border_width,
 			radius: Radius {
-				top_left: radius[0],
-				top_right: radius[1],
-				bottom_left: radius[2],
+				top_left:     radius[0],
+				top_right:    radius[1],
+				bottom_left:  radius[2],
 				bottom_right: radius[3],
 			},
 		},
-		shadow: Shadow {
-			color: entry.shadow_color.to_iced(),
-			offset: Vector::new(entry.shadow_offset_x, entry.shadow_offset_y),
-			blur_radius: entry.shadow_blur,
-		},
+		shadow: entry_shadow(status, is_selected, config),
 		snap: false,
 	}
 }
@@ -64,11 +60,11 @@ fn entry_background(status: Status, is_selected: bool, config: &LauncherConfig) 
 	let entry = &config.entry;
 	match (is_selected, status)
 	{
-		(true, Status::Pressed | Status::Hovered) => entry.selected_hovered_color.to_iced(),
-		(false, Status::Pressed) => entry.pressed_color.to_iced(),
-		(true, _) => entry.selected_color.to_iced(),
-		(false, Status::Hovered) => entry.hovered_color.to_iced(),
-		(false, _) => entry.background_color.to_iced(),
+		(true,  Status::Pressed | Status::Hovered) => entry.selected_hovered_color.to_iced(),
+		(false, Status::Pressed)                   => entry.pressed_color.to_iced(),
+		(true,  _)                                 => entry.selected_color.to_iced(),
+		(false, Status::Hovered)                   => entry.hovered_color.to_iced(),
+		(false, _)                                 => entry.background_color.to_iced(),
 	}
 }
 
@@ -78,8 +74,22 @@ fn entry_border_color(status: Status, is_selected: bool, config: &LauncherConfig
 	let entry = &config.entry;
 	match (is_selected, status)
 	{
-		(true, _) => entry.selected_border_color.to_iced(),
+		(true,  _)               => entry.selected_border_color.to_iced(),
 		(false, Status::Hovered) => entry.hovered_border_color.to_iced(),
-		_ => entry.border_color.to_iced(),
+		(false, Status::Pressed) => entry.pressed_border_color.to_iced(),
+		_                        => entry.border_color.to_iced(),
 	}
+}
+
+
+fn entry_shadow(status: Status, is_selected: bool, config: &LauncherConfig) -> Shadow
+{
+	let entry = &config.entry;
+	let (color, ox, oy, blur) = match (is_selected, status)
+	{
+		(true,  _)               => (entry.selected_shadow_color, entry.selected_shadow_offset_x, entry.selected_shadow_offset_y, entry.selected_shadow_blur),
+		(false, Status::Hovered) => (entry.hovered_shadow_color,  entry.hovered_shadow_offset_x,  entry.hovered_shadow_offset_y,  entry.hovered_shadow_blur),
+		_                        => (entry.shadow_color,           entry.shadow_offset_x,           entry.shadow_offset_y,           entry.shadow_blur),
+	};
+	Shadow { color: color.to_iced(), offset: Vector::new(ox, oy), blur_radius: blur }
 }

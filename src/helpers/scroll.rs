@@ -73,9 +73,12 @@ pub fn scroll_to_selected(app: &mut AppData) -> Task<Message>
 pub fn row_height(entry_config: &EntryConfig, has_comment: bool) -> f32
 {
 	let padding = entry_config.padding;
-	let base = (entry_config.name_size as f32) + (padding[0] as f32) * 2.0 + 8.0;
+	// Use top (padding[0]) + bottom (padding[2]) — not top*2 — so asymmetric
+	// padding configs are accounted for correctly.
+	let base = (entry_config.name_size as f32) + (padding[0] as f32) + (padding[2] as f32) + 8.0;
 	if has_comment {
-		base + (entry_config.comment_size as f32) + 6.0
+		// Use the configurable name_comment_spacing instead of a hardcoded 6.0.
+		base + (entry_config.comment_size as f32) + (entry_config.name_comment_spacing as f32)
 	} else {
 		base
 	}

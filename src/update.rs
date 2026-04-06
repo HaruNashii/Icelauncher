@@ -1,5 +1,6 @@
 // ============ IMPORTS ============
 use iced::Task;
+use iced::widget::{Id, operation, scrollable};
 
 
 
@@ -17,20 +18,54 @@ pub fn update(app: &mut AppData, message: Message) -> Task<Message>
 	match message
 	{
 
-		Message::QueryChanged(query) => 
+                Message::KeyboardEvent(key_event) =>
                 {
-			if app.alt_pressed 
+                    use iced::keyboard;
+                    let msg = match key_event
+                    {
+                        keyboard::Event::KeyPressed { key, modifiers, .. } =>
+                            crate::subscription::handle_key_pressed(key, modifiers, &app.config.keybinds),
+                        keyboard::Event::KeyReleased { key, .. } =>
+                            crate::subscription::handle_key_released(key, &app.config.keybinds),
+                        _ => None,
+                    };
+                    if let Some(inner) = msg
+                    {
+                        return update(app, inner);
+                    }
+                }
+
+		Message::QueryChanged(query) =>
+                {
+			if app.alt_pressed
                         {
 				return Task::none();
 			}
-			on_query_changed(app, query);
+			return on_query_changed(app, query);
 		}
 
-		Message::Scrolled(y, viewport_height, content_height) => 
+		Message::Scrolled(y, viewport_height, content_height) =>
                 {
 			app.scroll_offset = y;
 			app.viewport_h = viewport_height;
 			app.content_h = content_height;
+		}
+
+		Message::ScrollTo(offset) =>
+		{
+			// offset is an absolute pixel value; convert to relative [0,1].
+			// Guard against uninitialised dimensions (before the first
+			// Scrolled event arrives) so we don't snap to a wrong position.
+			if app.content_h <= 0.0 || app.viewport_h <= 0.0 {
+				return Task::none();
+			}
+			let scrollable_range = (app.content_h - app.viewport_h).max(1.0);
+			let relative = (offset / scrollable_range).clamp(0.0, 1.0);
+			app.scroll_offset = relative;
+			return operation::snap_to(
+				Id::new("results_scroll"),
+				scrollable::RelativeOffset { x: 0.0, y: relative },
+			);
 		}
 
                 Message::SelectUp    => return on_select_up(app),
@@ -49,5 +84,3 @@ pub fn update(app: &mut AppData, message: Message) -> Task<Message>
 	}
 	Task::none()
 }
-
-

@@ -10,7 +10,7 @@ use iced_layershell::to_layer_message;
 // ============ CRATES ============
 use crate::helpers::frecency::FrecencyStore;
 use crate::helpers::style::global_style;
-use crate::ron::{LauncherConfig, load_config};
+use crate::ron::{LauncherConfig, WindowAnchor, load_config};
 use crate::subscription::subscription;
 use crate::update::update;
 use crate::view::view;
@@ -63,12 +63,16 @@ pub struct AppData
 	pub frecency: FrecencyStore,
 	pub last_launched: Option<String>,
 	pub wl_copy_available: bool,
+	/// When true, the launcher was started with --shell/-s and shows
+	/// shell commands instead of .desktop applications.
+	pub shell_mode: bool,
 }
 
 #[to_layer_message]
 #[derive(Debug, Clone)]
 pub enum Message
 {
+        KeyboardEvent(iced::keyboard::Event),
 	AltPressed(bool),
 	Scrolled(f32, f32, f32),
 	ScrollTo(f32),
@@ -95,9 +99,9 @@ impl AppEntry
 {
 	pub fn with_normalized(mut self) -> Self
 	{
-		self.name_lc = self.name.to_lowercase();
-		self.exec_lc = self.exec.to_lowercase();
-		self.comment_lc = self.comment.to_lowercase();
+		self.name_lc     = self.name.to_lowercase();
+		self.exec_lc     = self.exec.to_lowercase();
+		self.comment_lc  = self.comment.to_lowercase();
 		self.keywords_lc = self.keywords.iter().map(|k| k.to_lowercase()).collect();
 		self
 	}
@@ -109,24 +113,49 @@ impl AppEntry
 // ============ FUNCTIONS ============
 pub fn main() -> Result<(), iced_layershell::Error>
 {
-	let config = load_config();
-	let window_width = config.window.width;
-	let window_height = config.window.height;
-	let frecency = FrecencyStore::load();
+	let args: Vec<String> = std::env::args().collect();
+
+	if args.iter().any(|a| a == "--help" || a == "-h")
+	{
+		println!("icelauncher — a Wayland application launcher\n");
+		println!("USAGE:");
+		println!("  icelauncher [OPTIONS]\n");
+		println!("OPTIONS:");
+		println!("  -s, --shell    Search and run shell commands instead of .desktop apps");
+		println!("  -h, --help     Print this help message and exit");
+		return Ok(());
+	}
+
+	let shell_mode = args.iter().any(|a| a == "--shell" || a == "-s");
+	let config          = load_config();
+	let window_width    = config.window.width;
+	let window_height   = config.window.height;
+	let frecency        = FrecencyStore::load();
 	let wl_copy_available = which::which("wl-copy").is_ok();
+	let anchor          = anchor_from_config(&config.window.anchor);
+	let margins         = (
+		config.window.margin_top    as i32,
+		config.window.margin_right  as i32,
+		config.window.margin_bottom as i32,
+		config.window.margin_left   as i32,
+	);
+
 	let initial_state = AppData {
 		loading: true,
 		config,
 		frecency,
 		wl_copy_available,
+		shell_mode,
 		..Default::default()
 	};
+
 	let layer_settings = LayerShellSettings
 	{
-		size: Some((window_width, window_height)),
-		anchor: Anchor::empty(),
-		layer: Layer::Overlay,
+		size:                   Some((window_width, window_height)),
+		anchor,
+		layer:                  Layer::Overlay,
 		keyboard_interactivity: KeyboardInteractivity::Exclusive,
+		margin:                 margins,
 		..Default::default()
 	};
 	let settings = Settings { layer_settings, ..Default::default() };
@@ -142,4 +171,21 @@ pub fn main() -> Result<(), iced_layershell::Error>
 fn app_namespace() -> String
 {
 	"icelauncher".into()
+}
+
+
+fn anchor_from_config(anchor: &WindowAnchor) -> Anchor
+{
+	match anchor
+	{
+		WindowAnchor::Center      => Anchor::empty(),
+		WindowAnchor::Top         => Anchor::Top,
+		WindowAnchor::Bottom      => Anchor::Bottom,
+		WindowAnchor::Left        => Anchor::Left,
+		WindowAnchor::Right       => Anchor::Right,
+		WindowAnchor::TopLeft     => Anchor::Top    | Anchor::Left,
+		WindowAnchor::TopRight    => Anchor::Top    | Anchor::Right,
+		WindowAnchor::BottomLeft  => Anchor::Bottom | Anchor::Left,
+		WindowAnchor::BottomRight => Anchor::Bottom | Anchor::Right,
+	}
 }
