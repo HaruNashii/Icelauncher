@@ -38,6 +38,8 @@ pub fn on_query_changed(app: &mut AppData, query: String) -> Task<Message>
 	app.filtered = filter_entries(&app.entries, &query, &app.config, &app.frecency);
 	app.query = query;
 	app.selected = 0;
+	// Any manual query change breaks out of history cycling.
+	app.shell_history_index = None;
 	app.scroll_offset = 0.0;
 	app.viewport_h = 0.0;
 	app.content_h = 0.0;
@@ -223,4 +225,49 @@ pub fn visible_count(app: &AppData) -> usize
 pub fn calc_display_value(name: &str) -> String
 {
 	name.trim_start_matches("= ").to_string()
+}
+
+
+pub fn on_shell_history_up(app: &mut AppData) -> Task<Message>
+{
+	if !app.shell_mode {
+		return Task::none();
+	}
+
+	// Build history list lazily: top frecency entries, most-recent first.
+	let history = app.frecency.top_n(50);
+	if history.is_empty() {
+		return Task::none();
+	}
+
+	let next_index = match app.shell_history_index {
+		None    => 0,
+		Some(i) => (i + 1).min(history.len() - 1),
+	};
+
+	app.shell_history_index = Some(next_index);
+	let query = history[next_index].clone();
+	on_query_changed(app, query)
+}
+
+
+pub fn on_shell_history_down(app: &mut AppData) -> Task<Message>
+{
+	if !app.shell_mode {
+		return Task::none();
+	}
+
+	match app.shell_history_index {
+		None | Some(0) => {
+			app.shell_history_index = None;
+			on_query_changed(app, String::new())
+		}
+		Some(i) => {
+			let history = app.frecency.top_n(50);
+			let prev_index = i - 1;
+			app.shell_history_index = Some(prev_index);
+			let query = history.get(prev_index).cloned().unwrap_or_default();
+			on_query_changed(app, query)
+		}
+	}
 }

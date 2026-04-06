@@ -180,16 +180,18 @@ pub fn discover_themes(bases: &[String]) -> Vec<String>
 	let preferred = get_icon_theme();
 	let mut themes: Vec<String> = Vec::new();
 
+	// Start with the user's preferred theme and expand its Inherits= chain.
 	if !preferred.is_empty() {
-		themes.push(preferred.clone());
+		expand_theme_chain(&preferred, bases, &mut themes);
 	}
+
+	// Then add every other installed theme (for broad fallback coverage).
 	for base in bases {
 		if let Ok(entries) = std::fs::read_dir(base) {
 			for entry in entries.flatten() {
 				let name = entry.file_name().to_string_lossy().into_owned();
 				let index = entry.path().join("index.theme");
 				if index.exists()
-					&& name != preferred
 					&& name != "hicolor"
 					&& !themes.contains(&name)
 				{
@@ -204,6 +206,45 @@ pub fn discover_themes(bases: &[String]) -> Vec<String>
 	}
 
 	themes
+}
+
+
+/// Recursively follows the `Inherits=` chain in a theme's `index.theme` file
+/// and appends each theme name (in order) to `out`, skipping duplicates.
+fn expand_theme_chain(theme: &str, bases: &[String], out: &mut Vec<String>)
+{
+	if out.contains(&theme.to_string()) {
+		return;
+	}
+	out.push(theme.to_string());
+
+	let parents = read_theme_parents(theme, bases);
+	for parent in parents {
+		if parent != "hicolor" {
+			expand_theme_chain(&parent, bases, out);
+		}
+	}
+}
+
+
+/// Parse the `Inherits=` line from a theme's `index.theme` and return the
+/// comma-separated parent theme names.
+fn read_theme_parents(theme: &str, bases: &[String]) -> Vec<String>
+{
+	for base in bases {
+		let index_path = format!("{}/{}/index.theme", base, theme);
+		let Ok(text) = std::fs::read_to_string(&index_path) else { continue };
+		for line in text.lines() {
+			if let Some(val) = line.strip_prefix("Inherits=") {
+				return val
+					.split(',')
+					.map(|s| s.trim().to_string())
+					.filter(|s| !s.is_empty())
+					.collect();
+			}
+		}
+	}
+	vec![]
 }
 
 

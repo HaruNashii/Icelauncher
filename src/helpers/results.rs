@@ -1,6 +1,6 @@
 // ============ IMPORTS ============
 use iced_layershell::reexport::core::Border;
-use iced::{Alignment, Color, Element, Length, Padding, widget::{text::Wrapping, Id, Space, button, column, container, row, scrollable, scrollable::{Rail, Scroller}}};
+use iced::{Alignment, Color, Element, Length, Padding, widget::{text::Wrapping, Id, Space, button, column, container, mouse_area, row, scrollable, scrollable::{Rail, Scroller}}};
 
 
 
@@ -114,9 +114,10 @@ fn build_entry_buttons(app: &AppData) -> Vec<Element<'_, Message>>
 fn build_entry_button<'a>(app: &'a AppData, index: usize, entry: &'a AppEntry) -> Element<'a, Message>
 {
     let is_selected = index == app.selected;
+    let is_hovered  = app.hovered == Some(index);
     let is_calc     = entry.exec.is_empty();
-    let icon        = build_icon_element(app, entry, is_selected, is_calc);
-    let label       = build_label_element(app, entry, is_selected);
+    let icon        = build_icon_element(app, entry, is_selected, is_hovered, is_calc);
+    let label       = build_label_element(app, entry, is_selected, is_hovered);
     let badges      = build_badge_elements(app, index, entry, is_calc);
     let content     = arrange_entry_content(app, is_selected, is_calc, icon, label, badges);
 
@@ -144,6 +145,12 @@ fn build_entry_button<'a>(app: &'a AppData, index: usize, entry: &'a AppEntry) -
         .width(Length::Fill)
         .style(move |_theme, status| entry_button_style(status, is_selected, &style_config));
 
+    // Wrap in mouse_area to detect hover enter/exit and sync keyboard selection.
+    let btn: Element<Message> = mouse_area(btn)
+        .on_enter(Message::HoverEntry(index))
+        .on_exit(Message::HoverClear)
+        .into();
+
     if app.config.entry.show_separator && index > 0
     {
         let sep_color = app.config.entry.separator_color.to_iced();
@@ -161,13 +168,13 @@ fn build_entry_button<'a>(app: &'a AppData, index: usize, entry: &'a AppEntry) -
     }
     else
     {
-        btn.into()
+        btn
     }
 }
 
 
 
-fn build_icon_element<'a>(app: &'a AppData, entry: &'a AppEntry, is_selected: bool, is_calc: bool) -> Element<'a, Message>
+fn build_icon_element<'a>(app: &'a AppData, entry: &'a AppEntry, is_selected: bool, is_hovered: bool, is_calc: bool) -> Element<'a, Message>
 {
     let icon_config = &app.config.icon;
     if !icon_config.show 
@@ -176,10 +183,10 @@ fn build_icon_element<'a>(app: &'a AppData, entry: &'a AppEntry, is_selected: bo
     }
 
     let radius       = icon_config.border_radius;
-    let background   = if is_selected { icon_config.selected_color.to_iced()        } else { icon_config.background_color.to_iced()  };
-    let border_color = if is_selected { icon_config.selected_border_color.to_iced() } else { icon_config.border_color.to_iced()       };
-    let icon_color   = if is_selected { icon_config.selected_icon_color.to_iced()   } else { icon_config.icon_color.to_iced()         };
-    let opacity      = if is_selected { icon_config.selected_opacity                } else { icon_config.opacity                      };
+    let background   = if is_selected { icon_config.selected_color.to_iced()        } else if is_hovered { icon_config.hovered_color.to_iced()        } else { icon_config.background_color.to_iced()  };
+    let border_color = if is_selected { icon_config.selected_border_color.to_iced() } else if is_hovered { icon_config.hovered_border_color.to_iced() } else { icon_config.border_color.to_iced()       };
+    let icon_color   = if is_selected { icon_config.selected_icon_color.to_iced()   } else if is_hovered { icon_config.hovered_icon_color.to_iced()   } else { icon_config.icon_color.to_iced()         };
+    let opacity      = if is_selected { icon_config.selected_opacity                } else if is_hovered { icon_config.hovered_opacity                } else { icon_config.opacity                      };
     let border_width = icon_config.border_width;
 
     let inner: Element<Message> = if is_calc 
@@ -249,16 +256,16 @@ fn build_real_icon<'a>(entry: &'a AppEntry, icon_config: &crate::ron::IconConfig
 
 
 
-fn build_label_element<'a>(app: &'a AppData, entry: &'a AppEntry, is_selected: bool) -> Element<'a, Message> 
+fn build_label_element<'a>(app: &'a AppData, entry: &'a AppEntry, is_selected: bool, is_hovered: bool) -> Element<'a, Message> 
 {
     let entry_config = &app.config.entry;
     let wrapping     = if entry_config.wrap_word { Wrapping::Word } else { Wrapping::None };
 
-    let name_text    = apply_entry_text_rules(&entry.name,    entry_config.name_max_chars,    entry_config.elipsize_instead_of_wrapping, entry_config.wrap_word, &entry_config.ellipsis);
-    let comment_text = apply_entry_text_rules(&entry.comment, entry_config.comment_max_chars, entry_config.elipsize_instead_of_wrapping, entry_config.wrap_word, &entry_config.ellipsis);
+    let name_text    = apply_entry_text_rules(&entry.name,    entry_config.name_max_chars,    entry_config.ellipsize_instead_of_wrapping, entry_config.wrap_word, &entry_config.ellipsis);
+    let comment_text = apply_entry_text_rules(&entry.comment, entry_config.comment_max_chars, entry_config.ellipsize_instead_of_wrapping, entry_config.wrap_word, &entry_config.ellipsis);
 
-    let name_color    = if is_selected { entry_config.selected_name_color.to_iced()    } else { entry_config.name_color.to_iced()    };
-    let comment_color = if is_selected { entry_config.selected_comment_color.to_iced() } else { entry_config.comment_color.to_iced() };
+    let name_color    = if is_selected { entry_config.selected_name_color.to_iced()    } else if is_hovered { entry_config.hovered_name_color.to_iced()    } else { entry_config.name_color.to_iced()    };
+    let comment_color = if is_selected { entry_config.selected_comment_color.to_iced() } else if is_hovered { entry_config.hovered_comment_color.to_iced() } else { entry_config.comment_color.to_iced() };
 
     let name_font    = make_font_family(&entry_config.name_font_weight,    &entry_config.name_font_style,    &entry_config.name_font_family);
     let comment_font = make_font_family(&entry_config.comment_font_weight, &entry_config.comment_font_style, &entry_config.comment_font_family);

@@ -151,7 +151,7 @@ const DEFAULT_CONFIG_TEXT: &str = r#"LauncherConfig
         hovered_shadow_blur:        3.0,
 
         wrap_word:                      false,
-        elipsize_instead_of_wrapping:   true,
+        ellipsize_instead_of_wrapping:   true,
         ellipsis:                       "...",
 
         show_separator:     false,
@@ -600,7 +600,7 @@ pub struct EntryConfig
     pub hovered_shadow_blur: f32,
 
     pub wrap_word: bool,
-    pub elipsize_instead_of_wrapping: bool,
+    pub ellipsize_instead_of_wrapping: bool,
     pub ellipsis: String,
 
     pub show_separator: bool,
@@ -670,7 +670,7 @@ impl Default for EntryConfig
             hovered_shadow_blur: 3.0,
 
             wrap_word: false,
-            elipsize_instead_of_wrapping: true,
+            ellipsize_instead_of_wrapping: true,
             ellipsis: "...".to_string(),
 
             show_separator: false,

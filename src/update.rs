@@ -24,7 +24,26 @@ pub fn update(app: &mut AppData, message: Message) -> Task<Message>
                     let msg = match key_event
                     {
                         keyboard::Event::KeyPressed { key, modifiers, .. } =>
-                            crate::subscription::handle_key_pressed(key, modifiers, &app.config.keybinds),
+                        {
+                            // In shell mode: ArrowUp/Down cycle through command history
+                            // instead of moving the selection cursor.
+                            if app.shell_mode
+                            {
+                                use iced::keyboard::key::Named;
+                                match &key
+                                {
+                                    iced::keyboard::Key::Named(Named::ArrowUp) =>
+                                        Some(Message::ShellHistoryUp),
+                                    iced::keyboard::Key::Named(Named::ArrowDown) =>
+                                        Some(Message::ShellHistoryDown),
+                                    _ => crate::subscription::handle_key_pressed(key, modifiers, &app.config.keybinds),
+                                }
+                            }
+                            else
+                            {
+                                crate::subscription::handle_key_pressed(key, modifiers, &app.config.keybinds)
+                            }
+                        }
                         keyboard::Event::KeyReleased { key, .. } =>
                             crate::subscription::handle_key_released(key, &app.config.keybinds),
                         _ => None,
@@ -79,6 +98,19 @@ pub fn update(app: &mut AppData, message: Message) -> Task<Message>
 		Message::CopyToClipboard(value) => return on_copy_to_clipboard(app, value),
 		Message::CopiedFeedbackClear => app.copy_feedback = false,
 		Message::Launch(exec) => return on_launch(app, exec),
+		Message::ShellHistoryUp   => return crate::helpers::update_helpers::on_shell_history_up(app),
+		Message::ShellHistoryDown => return crate::helpers::update_helpers::on_shell_history_down(app),
+		Message::HoverEntry(index) =>
+		{
+			app.hovered = Some(index);
+			// Sync keyboard selection to wherever the mouse is.
+			let max = crate::helpers::update_helpers::visible_count(app);
+			if index < max
+			{
+				app.selected = index;
+			}
+		}
+		Message::HoverClear => app.hovered = None,
 		Message::Close => return iced::exit(),
 		_ => {}
 	}

@@ -84,6 +84,13 @@ impl FrecencyStore
 		}
 	}
 
+	/// Record a launch in memory AND immediately persist to disk.
+	///
+	/// Prefer `record_in_memory` + a background `save` (as done in
+	/// `record_and_launch`) for non-blocking paths.  This method exists for
+	/// call-sites that need a synchronous, single-step record+save; it calls
+	/// `record_in_memory` exactly once before saving so no launch is
+	/// double-counted.
 	pub fn save_record(&mut self, exec: &str)
 	{
 		self.record_in_memory(exec);

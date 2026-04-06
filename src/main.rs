@@ -63,9 +63,13 @@ pub struct AppData
 	pub frecency: FrecencyStore,
 	pub last_launched: Option<String>,
 	pub wl_copy_available: bool,
+	/// Index of the entry currently under the mouse cursor (None = no hover).
+	pub hovered: Option<usize>,
 	/// When true, the launcher was started with --shell/-s and shows
 	/// shell commands instead of .desktop applications.
 	pub shell_mode: bool,
+	/// Position in shell history while cycling with ArrowUp (None = not cycling).
+	pub shell_history_index: Option<usize>,
 }
 
 #[to_layer_message]
@@ -88,6 +92,14 @@ pub enum Message
 	LaunchNth(usize),
 	RelaunchLast,
 	Close,
+	/// Mouse entered an entry card at the given visible index.
+	HoverEntry(usize),
+	/// Mouse left all entry cards.
+	HoverClear,
+	/// In shell mode: cycle query backward through frecency history.
+	ShellHistoryUp,
+	/// In shell mode: cycle query forward through frecency history.
+	ShellHistoryDown,
 	Nothing,
 }
 
@@ -115,6 +127,12 @@ pub fn main() -> Result<(), iced_layershell::Error>
 {
 	let args: Vec<String> = std::env::args().collect();
 
+	if args.iter().any(|a| a == "--version" || a == "-v")
+	{
+		println!("icelauncher {}", env!("CARGO_PKG_VERSION"));
+		return Ok(());
+	}
+
 	if args.iter().any(|a| a == "--help" || a == "-h")
 	{
 		println!("icelauncher — a Wayland application launcher\n");
@@ -123,6 +141,7 @@ pub fn main() -> Result<(), iced_layershell::Error>
 		println!("OPTIONS:");
 		println!("  -s, --shell    Search and run shell commands instead of .desktop apps");
 		println!("  -h, --help     Print this help message and exit");
+		println!("  -v, --version  Print version and exit");
 		return Ok(());
 	}
 
