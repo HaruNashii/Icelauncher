@@ -205,7 +205,14 @@ fn build_icon_element<'a>(app: &'a AppData, entry: &'a AppEntry, is_selected: bo
     } 
     else 
     {
-        let glyph = derive_icon_char(&entry.name);
+        let glyph = if entry.comment.contains("Play this game on Steam")
+        {
+            "🎮"
+        }
+        else
+        {
+            derive_icon_char(&entry.name)
+        };
         iced::widget::text(glyph).size(icon_config.text_size).color(icon_color).into()
     };
 

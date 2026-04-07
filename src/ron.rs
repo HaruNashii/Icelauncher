@@ -1,4 +1,5 @@
 // ============ IMPORTS ============
+use iced_layershell::reexport::{Anchor};
 use std::{fs, io::Write, path::PathBuf};
 use serde::{Deserialize, Serialize};
 
@@ -12,8 +13,7 @@ use crate::helpers::color::{ColorType, Gradient, hex_color};
 
 
 // ============ STATIC'S/CONST'S ============
-//
-// DEFAULT_CONFIG_TEXT
+const DEFAULT_CONFIG_TEXT: &str = r#"// DEFAULT_CONFIG_TEXT
 //
 // This is the default configuration file written to disk the first time
 // icelauncher runs without an existing config at:
@@ -44,7 +44,8 @@ use crate::helpers::color::{ColorType, Gradient, hex_color};
 //     Some(Gradient((angle_degrees, [(position, color), ...])))
 //   where position is 0.0–1.0 along the gradient axis.
 //   Example:
-//     background_gradient: Some(Gradient((90.0, [
+//     background_gradient: Some(Gradient((90.0, 
+//     [
 //         (0.0, HEX("1a1a2e")),
 //         (1.0, HEX("303050")),
 //     ]))),
@@ -57,11 +58,11 @@ use crate::helpers::color::{ColorType, Gradient, hex_color};
 //   A value of 0 means "use the natural/fill size" for that dimension.
 //
 // EDITING TIPS
-//   • After editing, save the file and relaunch — no hot-reload yet.
+//   • After editing, save the file and relaunch
 //   • Invalid RON will be logged and defaults used instead.
 //   • Delete the file to reset everything to these defaults.
-//
-const DEFAULT_CONFIG_TEXT: &str = r#"LauncherConfig
+
+LauncherConfig
 (
     window:
     (
@@ -1126,4 +1127,22 @@ fn write_default_config(path: &PathBuf) -> std::io::Result<()>
     let mut file = fs::File::create(path)?;
     file.write_all(DEFAULT_CONFIG_TEXT.as_bytes())?;
     Ok(())
+}
+
+
+
+pub fn anchor_from_config(anchor: &WindowAnchor) -> Anchor
+{
+	match anchor
+	{
+		WindowAnchor::Center      => Anchor::empty(),
+		WindowAnchor::Top         => Anchor::Top,
+		WindowAnchor::Bottom      => Anchor::Bottom,
+		WindowAnchor::Left        => Anchor::Left,
+		WindowAnchor::Right       => Anchor::Right,
+		WindowAnchor::TopLeft     => Anchor::Top    | Anchor::Left,
+		WindowAnchor::TopRight    => Anchor::Top    | Anchor::Right,
+		WindowAnchor::BottomLeft  => Anchor::Bottom | Anchor::Left,
+		WindowAnchor::BottomRight => Anchor::Bottom | Anchor::Right,
+	}
 }

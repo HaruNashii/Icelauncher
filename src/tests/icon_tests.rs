@@ -90,10 +90,9 @@ fn icon_char_calculator_apps()
 #[test]
 fn icon_char_unknown_returns_fallback()
 {
-    assert_eq!(derive_icon_char("Blender"), "▶");
-    assert_eq!(derive_icon_char("Steam"), "▶");
-    assert_eq!(derive_icon_char(""), "▶");
-    assert_eq!(derive_icon_char("RandomAppName"), "▶");
+    assert_eq!(derive_icon_char("Blender"), "🎲");
+    assert_eq!(derive_icon_char(""), "🎲");
+    assert_eq!(derive_icon_char("RandomAppName"), "🎲");
 }
 
 #[test]

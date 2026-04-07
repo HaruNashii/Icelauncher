@@ -5,24 +5,29 @@ use std::path::Path;
 
 
 // ============ STATIC'S/CONST'S ============
-const SIZES: &[&str] = &[
+const SIZES: &[&str] = &
+[
 	"scalable", "512x512", "256x256", "128x128", "96x96", "72x72",
 	"64x64", "48x48", "36x36", "32x32", "24x24", "22x22", "16x16",
 ];
-const SIZES_FLAT: &[&str] = &[
+const SIZES_FLAT: &[&str] = &
+[
 	"512", "256", "128", "96", "72", "64", "48", "36", "32", "24", "22", "16",
 ];
-const ICON_MAP: &[(&[&str], &str)] = &[
-	(&["terminal", "alacritty", "kitty", "foot"], "⊞"),
-	(&["firefox", "chromium", "browser", "chrome"], "🌐"),
-	(&["music", "spotify", "rhythmbox", "mpv"], "♫"),
-	(&["file", "nautilus", "dolphin", "thunar"], "📁"),
+const ICON_MAP: &[(&[&str], &str)] = &
+[
+	(&["terminal", "konsole", "tilix", "xterm", "wezterm", "xfce4-terminal", "terminator", "alacritty", "kitty", "foot", "kgx", "gnome-terminal", "ghostty"], "⊞"),
+	(&["firefox", "chromium", "browser", "chrome", "zen", "zen-browser", "brave", "vivaldi", "opera", "tor-browser", "edge", "librewolf", "epiphany"], "🌐"),
+	(&["music", "audacious", "strawberry", "lollypop", "amberol", "spotify", "rhythmbox", "mpv"], "♫"),
+	(&["file", "nemo", "pacmanfm", "caja", "krusader", "ranger", "nautilus", "dolphin", "thunar"], "📁"),
 	(&["text", "gedit", "notepad", "kate"], "📝"),
-	(&["image", "photo", "gimp", "inkscape"], "🖼"),
-	(&["code", "vscode", "vscodium"], "</>"),
-	(&["setting", "control", "system"], "⚙"),
-	(&["mail", "thunderbird", "email"], "✉"),
-	(&["calc", "math"], "🧮"),
+	(&["image", "gwenview", "gthumb",  "feh", "eog", "vlc", "photo", "gimp", "inkscape", "krita"], "🖼"),
+	(&["code", "vscode", "vscodium", "vim", "neovim", "cmake"], "</>"),
+	(&["mail", "thunderbird", "email", "geary", "evolution", "mailspring"], "✉"),
+	(&["calc", "math", "kcalc", "calculator"], "🧮"),
+        (&["setting", "control", "adwsteamgtk", "system", "tweaks", "lxappearance", "nwg-look", "GTK Settings", "customize look and feel"], "⚙"),
+	(&["game", "steam", "lutris", "heroic", "epic", "epic_games", "EA app", "Battle", "GOG", "hydra", "fugus"], "🎮"),
+        (&["discord", "telegram"], "💬")
 ];
 
 
@@ -31,10 +36,12 @@ const ICON_MAP: &[(&[&str], &str)] = &[
 // ============ FUNCTIONS ============
 pub fn resolve_icon_with(icon: &str, bases: &[String], themes: &[String]) -> Option<String>
 {
-	if icon.is_empty() {
+	if icon.is_empty() 
+        {
 		return None;
 	}
-	if icon.starts_with('/') {
+	if icon.starts_with('/') 
+        {
 		return Path::new(icon).exists().then(|| icon.to_string());
 	}
 
@@ -46,26 +53,36 @@ pub fn resolve_icon_with(icon: &str, bases: &[String], themes: &[String]) -> Opt
 
 	let mut buf = String::with_capacity(256);
 
-	for base in bases {
-		for theme in themes {
-			for sz in SIZES {
-				for ext in ["svg", "png"] {
+	for base in bases 
+        {
+		for theme in themes 
+                {
+			for sz in SIZES 
+                        {
+				for ext in ["svg", "png"] 
+                                {
 					build_path4(&mut buf, base, theme, sz, "apps", name, ext);
-					if Path::new(&buf).exists() {
+					if Path::new(&buf).exists() 
+                                        {
 						return Some(buf);
 					}
 				}
 			}
-			for ext in ["svg", "png"] {
+			for ext in ["svg", "png"] 
+                        {
 				build_path3(&mut buf, base, theme, "apps/scalable", name, ext);
-				if Path::new(&buf).exists() {
+				if Path::new(&buf).exists() 
+                                {
 					return Some(buf);
 				}
 			}
-			for sz in SIZES_FLAT {
-				for ext in ["svg", "png"] {
+			for sz in SIZES_FLAT 
+                        {
+				for ext in ["svg", "png"] 
+                                {
 					build_path4(&mut buf, base, theme, "apps", sz, name, ext);
-					if Path::new(&buf).exists() {
+					if Path::new(&buf).exists() 
+                                        {
 						return Some(buf);
 					}
 				}
@@ -77,7 +94,8 @@ pub fn resolve_icon_with(icon: &str, bases: &[String], themes: &[String]) -> Opt
 	let home_str = home.to_string_lossy();
 	let host_user = std::env::var("USER").unwrap_or_default();
 
-	let flatpak_candidates: [(&str, &str); 8] = [
+	let flatpak_candidates: [(&str, &str); 8] = 
+        [
 		(&home_str, ".local/share/flatpak/exports/share/icons/hicolor/scalable/apps"),
 		(&home_str, ".local/share/flatpak/exports/share/icons/hicolor/48x48/apps"),
 		("/var/lib/flatpak/exports/share/icons/hicolor/scalable/apps", ""),
@@ -88,16 +106,20 @@ pub fn resolve_icon_with(icon: &str, bases: &[String], themes: &[String]) -> Opt
 		("/run/host/var/lib/flatpak/exports/share/icons/hicolor/48x48/apps", ""),
 	];
 
-	let host_paths = [
+	let host_paths = 
+        [
 		format!("/run/host/home/{host_user}/.local/share/flatpak/exports/share/icons/hicolor/scalable/apps"),
 		format!("/run/host/home/{host_user}/.local/share/flatpak/exports/share/icons/hicolor/48x48/apps"),
 	];
 
-	for (prefix, suffix) in &flatpak_candidates {
-		for ext in ["svg", "png"] {
+	for (prefix, suffix) in &flatpak_candidates 
+        {
+		for ext in ["svg", "png"] 
+                {
 			buf.clear();
 			buf.push_str(prefix);
-			if !suffix.is_empty() {
+			if !suffix.is_empty() 
+                        {
 				buf.push('/');
 				buf.push_str(suffix);
 			}
@@ -105,33 +127,39 @@ pub fn resolve_icon_with(icon: &str, bases: &[String], themes: &[String]) -> Opt
 			buf.push_str(name);
 			buf.push('.');
 			buf.push_str(ext);
-			if Path::new(&buf).exists() {
+			if Path::new(&buf).exists() 
+                        {
 				return Some(buf);
 			}
 		}
 	}
 
-	for dir in &host_paths {
-		for ext in ["svg", "png"] {
+	for dir in &host_paths 
+        {
+		for ext in ["svg", "png"] 
+                {
 			buf.clear();
 			buf.push_str(dir);
 			buf.push('/');
 			buf.push_str(name);
 			buf.push('.');
 			buf.push_str(ext);
-			if Path::new(&buf).exists() {
+			if Path::new(&buf).exists() 
+                        {
 				return Some(buf);
 			}
 		}
 	}
 
-	for ext in ["png", "svg"] {
+	for ext in ["png", "svg"] 
+        {
 		buf.clear();
 		buf.push_str("/usr/share/pixmaps/");
 		buf.push_str(name);
 		buf.push('.');
 		buf.push_str(ext);
-		if Path::new(&buf).exists() {
+		if Path::new(&buf).exists() 
+                {
 			return Some(buf);
 		}
 	}
@@ -140,7 +168,8 @@ pub fn resolve_icon_with(icon: &str, bases: &[String], themes: &[String]) -> Opt
 	buf.push_str("/usr/share/icons/hicolor/scalable/apps/");
 	buf.push_str(name);
 	buf.push_str(".svg");
-	if Path::new(&buf).exists() {
+	if Path::new(&buf).exists() 
+        {
 		return Some(buf);
 	}
 
@@ -148,17 +177,21 @@ pub fn resolve_icon_with(icon: &str, bases: &[String], themes: &[String]) -> Opt
 }
 
 
+
 pub fn icon_base_dirs() -> Vec<String>
 {
 	let mut dirs = Vec::new();
 
-	if let Some(home) = home::home_dir() {
+	if let Some(home) = home::home_dir() 
+        {
 		dirs.push(home.join(".local/share/icons").to_string_lossy().into_owned());
 		dirs.push(home.join(".local/share/flatpak/exports/share/icons").to_string_lossy().into_owned());
 	}
 
-	if let Ok(xdg) = std::env::var("XDG_DATA_DIRS") {
-		for p in xdg.split(':') {
+	if let Ok(xdg) = std::env::var("XDG_DATA_DIRS") 
+        {
+		for p in xdg.split(':') 
+                {
 			dirs.push(format!("{}/icons", p.trim_end_matches('/')));
 		}
 	}
@@ -175,25 +208,26 @@ pub fn icon_base_dirs() -> Vec<String>
 }
 
 
+
 pub fn discover_themes(bases: &[String]) -> Vec<String>
 {
 	let preferred = get_icon_theme();
 	let mut themes: Vec<String> = Vec::new();
 
-	// Start with the user's preferred theme and expand its Inherits= chain.
-	if !preferred.is_empty() {
+	if !preferred.is_empty() 
+        {
 		expand_theme_chain(&preferred, bases, &mut themes);
 	}
 
-	// Then add every other installed theme (for broad fallback coverage).
-	for base in bases {
-		if let Ok(entries) = std::fs::read_dir(base) {
-			for entry in entries.flatten() {
+	for base in bases 
+        {
+		if let Ok(entries) = std::fs::read_dir(base) 
+                {
+			for entry in entries.flatten() 
+                        {
 				let name = entry.file_name().to_string_lossy().into_owned();
 				let index = entry.path().join("index.theme");
-				if index.exists()
-					&& name != "hicolor"
-					&& !themes.contains(&name)
+				if index.exists() && name != "hicolor" && !themes.contains(&name)
 				{
 					themes.push(name);
 				}
@@ -201,7 +235,8 @@ pub fn discover_themes(bases: &[String]) -> Vec<String>
 		}
 	}
 
-	if !themes.contains(&"hicolor".to_string()) {
+	if !themes.contains(&"hicolor".to_string()) 
+        {
 		themes.push("hicolor".to_string());
 	}
 
@@ -209,33 +244,37 @@ pub fn discover_themes(bases: &[String]) -> Vec<String>
 }
 
 
-/// Recursively follows the `Inherits=` chain in a theme's `index.theme` file
-/// and appends each theme name (in order) to `out`, skipping duplicates.
+
 fn expand_theme_chain(theme: &str, bases: &[String], out: &mut Vec<String>)
 {
-	if out.contains(&theme.to_string()) {
+	if out.contains(&theme.to_string()) 
+        {
 		return;
 	}
 	out.push(theme.to_string());
 
 	let parents = read_theme_parents(theme, bases);
-	for parent in parents {
-		if parent != "hicolor" {
+	for parent in parents 
+        {
+		if parent != "hicolor" 
+                {
 			expand_theme_chain(&parent, bases, out);
 		}
 	}
 }
 
 
-/// Parse the `Inherits=` line from a theme's `index.theme` and return the
-/// comma-separated parent theme names.
+
 fn read_theme_parents(theme: &str, bases: &[String]) -> Vec<String>
 {
-	for base in bases {
+	for base in bases 
+        {
 		let index_path = format!("{}/{}/index.theme", base, theme);
 		let Ok(text) = std::fs::read_to_string(&index_path) else { continue };
-		for line in text.lines() {
-			if let Some(val) = line.strip_prefix("Inherits=") {
+		for line in text.lines() 
+                {
+			if let Some(val) = line.strip_prefix("Inherits=") 
+                        {
 				return val
 					.split(',')
 					.map(|s| s.trim().to_string())
@@ -248,26 +287,34 @@ fn read_theme_parents(theme: &str, bases: &[String]) -> Vec<String>
 }
 
 
+
 pub fn derive_icon_char(name: &str) -> &'static str
 {
 	let lower = name.to_lowercase();
-	for (keywords, glyph) in ICON_MAP {
-		if keywords.iter().any(|k| lower.contains(k)) {
+	for (keywords, glyph) in ICON_MAP 
+        {
+		if keywords.iter().any(|k| lower.contains(k)) 
+                {
 			return glyph;
 		}
 	}
-	"▶"
+	"🎲"
 }
 
 
 fn get_icon_theme() -> String
 {
-	if let Some(home) = home::home_dir() {
-		for cfg in &["gtk-4.0/settings.ini", "gtk-3.0/settings.ini"] {
+	if let Some(home) = home::home_dir() 
+        {
+		for cfg in &["gtk-4.0/settings.ini", "gtk-3.0/settings.ini"] 
+                {
 			let path = home.join(".config").join(cfg);
-			if let Ok(text) = std::fs::read_to_string(path) {
-				for line in text.lines() {
-					if let Some(v) = line.strip_prefix("gtk-icon-theme-name=") {
+			if let Ok(text) = std::fs::read_to_string(path) 
+                        {
+				for line in text.lines() 
+                                {
+					if let Some(v) = line.strip_prefix("gtk-icon-theme-name=") 
+                                        {
 						let theme = v.trim().to_string();
 						return theme;
 					}
@@ -276,18 +323,23 @@ fn get_icon_theme() -> String
 		}
 
 		let kdeglobals = home.join(".config/kdeglobals");
-		if let Ok(text) = std::fs::read_to_string(kdeglobals) {
+		if let Ok(text) = std::fs::read_to_string(kdeglobals) 
+                {
 			let mut in_icons = false;
-			for line in text.lines() {
-				if line.trim() == "[Icons]" {
+			for line in text.lines() 
+                        {
+				if line.trim() == "[Icons]" 
+                                {
 					in_icons = true;
 					continue;
 				}
-				if line.starts_with('[') {
+				if line.starts_with('[') 
+                                {
 					in_icons = false;
 					continue;
 				}
-				if in_icons && let Some(v) = line.strip_prefix("Theme=") {
+				if in_icons && let Some(v) = line.strip_prefix("Theme=") 
+                                {
 					let theme = v.trim().to_string();
 					return theme;
 				}
@@ -295,14 +347,16 @@ fn get_icon_theme() -> String
 		}
 
 		let xsettings = home.join(".config/xfce4/xfconf/xfce-perchannel-xml/xsettings.xml");
-		if let Ok(text) = std::fs::read_to_string(xsettings) {
-			for line in text.lines() {
+		if let Ok(text) = std::fs::read_to_string(xsettings) 
+                {
+			for line in text.lines() 
+                        {
 				let line = line.trim();
-				if line.contains("\"Net/IconThemeName\"")
-					&& let Some(start) = line.find("value=\"")
+				if line.contains("\"Net/IconThemeName\"") && let Some(start) = line.find("value=\"")
 				{
 					let rest = &line[start + 7..];
-					if let Some(end) = rest.find('"') {
+					if let Some(end) = rest.find('"') 
+                                        {
 						let theme = rest[..end].to_string();
 						return theme;
 					}

@@ -1,5 +1,7 @@
 // ============ MOD'S ============
 #[cfg(test)]
+pub mod font_tests;
+#[cfg(test)]
 pub mod color_tests;
 #[cfg(test)]
 pub mod desktop_tests;

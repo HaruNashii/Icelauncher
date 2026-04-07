@@ -1,7 +1,5 @@
 // ============ IMPORTS ============
-use iced::Task;
-use iced::widget::{Id, operation, scrollable};
-
+use iced::{Task, keyboard, widget::{Id, operation, scrollable}};
 
 
 
@@ -20,7 +18,6 @@ pub fn update(app: &mut AppData, message: Message) -> Task<Message>
 
                 Message::KeyboardEvent(key_event) =>
                 {
-                    use iced::keyboard;
                     let msg = match key_event
                     {
                         keyboard::Event::KeyPressed { key, modifiers, .. } => crate::subscription::handle_key_pressed(key, modifiers, &app.config.keybinds),

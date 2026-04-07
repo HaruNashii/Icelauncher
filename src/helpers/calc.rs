@@ -8,7 +8,8 @@ use crate::AppEntry;
 pub fn evaluate_as_calculator(expr: &str) -> Option<AppEntry>
 {
 	let value = try_evaluate(expr.trim())?;
-	Some(AppEntry {
+	Some(AppEntry 
+        {
 		name: format!("= {}", value),
 		generic_name: String::new(),
 		exec: String::new(),
@@ -28,7 +29,8 @@ pub fn evaluate_as_calculator(expr: &str) -> Option<AppEntry>
 
 fn try_evaluate(expr: &str) -> Option<String>
 {
-	if !has_math_operators(expr) {
+	if !has_math_operators(expr) 
+        {
 		return None;
 	}
 
@@ -43,10 +45,12 @@ fn has_math_operators(expr: &str) -> bool
 {
 	let has_standard_operator = expr.contains(['+', '*', '/', '%', '^', '(', ')']);
 
-	let has_binary_minus = {
+	let has_binary_minus = 
+        {
 		let mut prev: Option<char> = None;
 		let mut found = false;
-		for ch in expr.chars().filter(|c| !c.is_whitespace()) {
+		for ch in expr.chars().filter(|c| !c.is_whitespace()) 
+                {
 			if ch == '-' && let Some(p) = prev && (p.is_ascii_digit() || p == ')')
 			{
 				found = true;
@@ -63,9 +67,12 @@ fn has_math_operators(expr: &str) -> bool
 
 fn format_result(result: f64) -> String
 {
-	if result.fract() == 0.0 && result.abs() < 1e15 {
+	if result.fract() == 0.0 && result.abs() < 1e15 
+        {
 		format!("{}", result as i64)
-	} else {
+	} 
+        else 
+        {
 		let formatted = format!("{:.10}", result);
 		formatted.trim_end_matches('0').trim_end_matches('.').to_string()
 	}

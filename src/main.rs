@@ -1,6 +1,6 @@
 // ============ IMPORTS ============
 use iced_layershell::application;
-use iced_layershell::reexport::{Anchor, KeyboardInteractivity, Layer};
+use iced_layershell::reexport::{KeyboardInteractivity, Layer};
 use iced_layershell::settings::{LayerShellSettings, Settings, StartMode};
 use iced_layershell::to_layer_message;
 
@@ -11,7 +11,7 @@ use iced_layershell::to_layer_message;
 use crate::helpers::frecency::FrecencyStore;
 use crate::helpers::monitor::get_monitor_res;
 use crate::helpers::style::global_style;
-use crate::ron::{LauncherConfig, WindowAnchor, load_config};
+use crate::ron::{anchor_from_config, LauncherConfig, load_config};
 use crate::subscription::subscription;
 use crate::update::update;
 use crate::view::view;
@@ -140,15 +140,15 @@ pub fn main() -> Result<(), iced_layershell::Error>
 		return Ok(());
 	}
 
-	let shell_mode                = args.iter().any(|a| a == "--shell" || a == "-s");
-	let mut config          = load_config();
-	let window_width               = config.window.width;
-	let window_height              = config.window.height;
-	let frecency         = FrecencyStore::load();
-	let wl_copy_available         = which::which("wl-copy").is_ok();
-	let anchor                  = anchor_from_config(&config.window.anchor);
-        let display         = config.window.display.clone();
-	let margins   = 
+	let shell_mode  = args.iter().any(|a| a == "--shell" || a == "-s");
+	let mut config  = load_config();
+	let window_width    = config.window.width;
+	let window_height   = config.window.height;
+	let frecency    = FrecencyStore::load();
+	let wl_copy_available   = which::which("wl-copy").is_ok();
+	let anchor  = anchor_from_config(&config.window.anchor);
+        let display = config.window.display.clone();
+	let margins = 
         (
 		config.window.margin_top    as i32,
 		config.window.margin_right  as i32,
@@ -165,26 +165,10 @@ pub fn main() -> Result<(), iced_layershell::Error>
         let (mw, mh) = get_monitor_res(display);
         let n_window_size = match (window_width, window_height)
         {
-            (0, 0) => 
-            {
-                println!("both dimensions are 0");
-                Some((mw, mh))
-            }
-            (0, h) => 
-            {
-                println!("window width is 0");
-                Some((mw, h))
-            }
-            (w, 0) => 
-            {
-                println!("window height is 0");
-                Some((w, mh))
-            }
-            (w, h) => 
-            {
-                println!("window size is normal");
-                Some((w, h))
-            }
+            (0, 0) => Some((mw, mh)),
+            (0, h) => Some((mw, h)),
+            (w, 0) => Some((w, mh)),
+            (w, h) => Some((w, h)),
         };
 
         if let Some(window_size) = n_window_size
@@ -223,24 +207,8 @@ pub fn main() -> Result<(), iced_layershell::Error>
 }
 
 
+
 fn app_namespace() -> String
 {
 	"icelauncher".into()
-}
-
-
-fn anchor_from_config(anchor: &WindowAnchor) -> Anchor
-{
-	match anchor
-	{
-		WindowAnchor::Center      => Anchor::empty(),
-		WindowAnchor::Top         => Anchor::Top,
-		WindowAnchor::Bottom      => Anchor::Bottom,
-		WindowAnchor::Left        => Anchor::Left,
-		WindowAnchor::Right       => Anchor::Right,
-		WindowAnchor::TopLeft     => Anchor::Top    | Anchor::Left,
-		WindowAnchor::TopRight    => Anchor::Top    | Anchor::Right,
-		WindowAnchor::BottomLeft  => Anchor::Bottom | Anchor::Left,
-		WindowAnchor::BottomRight => Anchor::Bottom | Anchor::Right,
-	}
 }

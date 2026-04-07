@@ -21,11 +21,6 @@ use crate::
 pub fn build_search_bar(app: &AppData) -> Element<'_, Message>
 {
     let search_config = &app.config.search;
-    // The launcher window holds exclusive keyboard focus the entire time it is
-    // open, so the search bar is always "focused" from the user's perspective.
-    // Using `!query.is_empty()` caused the focused colours to never appear on
-    // launch (before the user typed anything), making the bar look permanently
-    // unfocused.
     let is_focused = true;
 
     let background = if is_focused 
@@ -103,8 +98,6 @@ pub fn build_search_bar(app: &AppData) -> Element<'_, Message>
 
 fn resolve_submit_message(app: &AppData) -> Message
 {
-    // In shell mode: if the query has spaces (i.e. has arguments) or no entry
-    // is selected, run the raw query string directly as a shell command.
     if app.shell_mode && (app.query.contains(' ') || app.filtered.is_empty())
     {
         let query = app.query.trim().to_string();
