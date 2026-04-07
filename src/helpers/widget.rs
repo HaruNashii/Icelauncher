@@ -22,7 +22,10 @@ use crate::ron::{FontStyle, FontWeight, TextAlign};
 /// family name once and reuse the same `&'static str` thereafter.
 static FONT_FAMILY_CACHE: Mutex<Option<HashMap<String, &'static str>>> = Mutex::new(None);
 
-fn intern_font_family(family: &str) -> &'static str
+/// Intern a font family name so it lives for the process lifetime and can be
+/// handed to `iced::font::Family::Name` as a `&'static str`.  Exposed so
+/// `helpers::font` can use the same cache.
+pub fn intern_font_family(family: &str) -> &'static str
 {
 	let mut guard = FONT_FAMILY_CACHE.lock().unwrap_or_else(|e| e.into_inner());
 	let cache = guard.get_or_insert_with(HashMap::new);
@@ -44,19 +47,13 @@ pub fn make_font(weight: &FontWeight, style: &FontStyle) -> Font
 }
 
 
+/// Build a `Font` from a family name string, weight, and style.
+/// The family is passed through the fuzzy font resolver so that
+/// user-friendly names like "JetBrains Mono" work even if the exact
+/// fc-list name is "JetBrainsMono Nerd Font".
 pub fn make_font_family(weight: &FontWeight, style: &FontStyle, family: &str) -> Font
 {
-	if family.is_empty()
-	{
-		return make_font(weight, style);
-	}
-	Font
-	{
-		weight: weight.to_iced(),
-		style:  style.to_iced(),
-		family: iced::font::Family::Name(intern_font_family(family)),
-		..Font::default()
-	}
+	crate::helpers::font::build_font(family, weight, style)
 }
 
 

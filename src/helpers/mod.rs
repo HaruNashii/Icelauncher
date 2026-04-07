@@ -1,9 +1,11 @@
 // ============ MOD'S ============
 pub mod calc;
 pub mod desktop;
+pub mod monitor;
 pub mod filter;
 pub mod footer;
 pub mod color;
+pub mod font;
 pub mod update_helpers;
 pub mod frecency;
 pub mod fuzzy;

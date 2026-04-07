@@ -10,6 +10,7 @@ use iced_layershell::reexport::core::{Border, Shadow};
 
 
 // ============ CRATES ============
+use crate::helpers::color::color_or_gradient;
 use crate::ron::LauncherConfig;
 use crate::AppData;
 
@@ -35,9 +36,10 @@ pub fn entry_button_style(
 {
 	let entry = &config.entry;
 	let radius = entry.border_radius;
+	let (bg_color, bg_gradient) = entry_background(status, is_selected, config);
 
 	button::Style {
-		background: Some(iced::Background::Color(entry_background(status, is_selected, config))),
+		background: Some(color_or_gradient(bg_gradient, bg_color)),
 		text_color: entry.text_color.to_iced(),
 		border: Border {
 			color: entry_border_color(status, is_selected, config),
@@ -55,16 +57,16 @@ pub fn entry_button_style(
 }
 
 
-fn entry_background(status: Status, is_selected: bool, config: &LauncherConfig) -> iced::Color
+fn entry_background(status: Status, is_selected: bool, config: &LauncherConfig) -> (crate::helpers::color::ColorType, Option<&crate::helpers::color::Gradient>)
 {
 	let entry = &config.entry;
 	match (is_selected, status)
 	{
-		(true,  Status::Pressed | Status::Hovered) => entry.selected_hovered_color.to_iced(),
-		(false, Status::Pressed)                   => entry.pressed_color.to_iced(),
-		(true,  _)                                 => entry.selected_color.to_iced(),
-		(false, Status::Hovered)                   => entry.hovered_color.to_iced(),
-		(false, _)                                 => entry.background_color.to_iced(),
+		(true,  Status::Pressed | Status::Hovered) => (entry.selected_hovered_color, entry.selected_hovered_gradient.as_ref()),
+		(false, Status::Pressed)                   => (entry.pressed_color,           entry.pressed_gradient.as_ref()),
+		(true,  _)                                 => (entry.selected_color,          entry.selected_gradient.as_ref()),
+		(false, Status::Hovered)                   => (entry.hovered_color,           entry.hovered_gradient.as_ref()),
+		(false, _)                                 => (entry.background_color,        entry.background_gradient.as_ref()),
 	}
 }
 

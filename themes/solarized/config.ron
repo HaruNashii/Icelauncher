@@ -1,48 +1,45 @@
 // ╭─────────────────────────────────────────────────────────────────────────╮
-// │   T O K Y O   N I G H T   ·   ICELAUNCHER                               │
-// │   Floating island. Center. Rain-soaked neon on deep navy.               │
+// │   S O L A R I Z E D   L I G H T   ·   ICELAUNCHER                       │
+// │   Full-width top. Light cream toolbar. Classic retro.                   │
 // ╰─────────────────────────────────────────────────────────────────────────╯
 //
-//  PALETTE — Tokyo Night Storm
-//    bg_dark (26,27,38)  bg_float (38,39,58)  bg_visual (47,51,73)
-//    fg (169,177,214)  fg_gutter (81,88,124)
-//    blue (122,162,247) ← PRIMARY  orange (255,158,99) ← hover
-//    green (158,206,106)  magenta (187,154,247)  yellow (224,175,104)  red (247,56,91)
+//  PALETTE — Solarized Light
+//    base3 (253,246,227)  base2 (238,232,213)  base0 (101,123,131)
+//    orange (203,75,22) ← accent  yellow (181,137,0)  blue (38,139,210)
+//    cyan (42,161,152)  green (133,153,0)  red (220,50,47)
+//    dark hover (0,43,54)
 //
-//  LAYOUT — STANDARD CENTER ISLAND
-//    · 560×480 — standard floating launcher
-//    · Center anchor — classic spotlight feel
-//    · 1 column, 16px radius — big soft pill
+//  LAYOUT — FULL-WIDTH TOP TOOLBAR
+//    · 0×380 (full width) — flat cream toolbar at top
+//    · Top anchor, flush to screen edge
+//    · 1 column, 4px radius — minimal rounding
 //    · Search at Top. Footer at Bottom.
 
 LauncherConfig
 (
     window:
     (
-        width:              560,
-        height:             480,
-        max_results:        12,
+        width:              0,
+        height:             380,
+        max_results:        14,
         padding:            12,
         section_spacing:    0,
         entry_spacing:      3,
         grid_side_items:    1,
         grid_column_spacing: 6,
 
-        border_radius:      (16.0, 16.0, 16.0, 16.0),
+        border_radius:      (4.0, 4.0, 4.0, 4.0),
         border_width:       0.0,
         border_color:       RGBA((0, 0, 0, 0)),
-        background_color:   RGBA((26, 27, 38, 100)),
-        background_gradient: Some(Gradient((180.0, [
-            (0.0, RGBA((36, 40, 59, 100))),
-            (1.0, RGBA((26, 27, 38, 100))),
-        ]))),
+        background_color:   RGBA((253, 246, 227, 100)),
+        background_gradient: None,
 
-        shadow_color:       RGBA((0, 0, 0, 65)),
+        shadow_color:       RGBA((0, 0, 0, 0)),
         shadow_offset_x:    0.0,
         shadow_offset_y:    6.0,
         shadow_blur:        24.0,
 
-        anchor:             Center,
+        anchor:             Top,
         margin_top:         0,
         margin_bottom:      0,
         margin_left:        0,
@@ -59,9 +56,9 @@ LauncherConfig
         rail_color:              RGBA((0, 0, 0, 0)),
         rail_border_color:       RGBA((0, 0, 0, 0)),
         rail_border_width:       0.0,
-        scroller_color:          RGBA((122, 162, 247, 35)),
-        scroller_hovered_color:  RGBA((122, 162, 247, 60)),
-        scroller_dragging_color: RGBA((122, 162, 247, 80)),
+        scroller_color:          RGBA((203, 75, 22, 35)),
+        scroller_hovered_color:  RGBA((203, 75, 22, 60)),
+        scroller_dragging_color: RGBA((203, 75, 22, 80)),
         scroller_border_color:   RGBA((0, 0, 0, 0)),
         scroller_border_width:   0.0,
     ),
@@ -73,21 +70,21 @@ LauncherConfig
         input_padding:             10,
         bottom_margin:             8.0,
 
-        background_color:          RGB((38, 39, 58)),
+        background_color:          RGB((238, 232, 213)),
         background_gradient:       None,
-        focused_background_color:  RGB((38, 39, 58)),
+        focused_background_color:  RGB((238, 232, 213)),
         focused_background_gradient: None,
         border_color:              RGBA((0, 0, 0, 0)),
-        focused_border_color:      RGB((122, 162, 247)),
+        focused_border_color:      RGB((203, 75, 22)),
         border_width:              1.5,
-        border_radius:             (16.0, 16.0, 16.0, 16.0),
+        border_radius:             (4.0, 4.0, 4.0, 4.0),
 
-        text_color:                RGB((169, 177, 214)),
-        placeholder_color:         RGB((81, 88, 124)),
-        selection_color:           RGBA((122, 162, 247, 40)),
+        text_color:                RGB((88, 110, 117)),
+        placeholder_color:         RGB((147, 161, 161)),
+        selection_color:           RGBA((203, 75, 22, 40)),
 
         icon:                      "",
-        icon_color:                RGB((81, 88, 124)),
+        icon_color:                RGB((147, 161, 161)),
 
         font_weight:               Normal,
         font_style:                Normal,
@@ -104,9 +101,9 @@ LauncherConfig
     entry:
     (
         name_size:              14,
-        name_color:             RGB((169, 177, 214)),
-        selected_name_color:    RGB((169, 177, 214)),
-        hovered_name_color:     RGB((169, 177, 214)),
+        name_color:             RGB((88, 110, 117)),
+        selected_name_color:    RGB((88, 110, 117)),
+        hovered_name_color:     RGB((88, 110, 117)),
         name_font_weight:       Normal,
         name_font_style:        Normal,
         name_font_family:       "",
@@ -114,9 +111,9 @@ LauncherConfig
         name_max_chars:         55,
 
         comment_size:           11,
-        comment_color:          RGB((81, 88, 124)),
-        selected_comment_color: RGB((81, 88, 124)),
-        hovered_comment_color:  RGB((81, 88, 124)),
+        comment_color:          RGB((147, 161, 161)),
+        selected_comment_color: RGB((147, 161, 161)),
+        hovered_comment_color:  RGB((147, 161, 161)),
         comment_font_weight:    Normal,
         comment_font_style:     Normal,
         comment_font_family:    "",
@@ -131,18 +128,18 @@ LauncherConfig
         height:                 0,
 
         background_color:       RGBA((0, 0, 0, 0)),
-        hovered_color:          RGB((47, 51, 73)),
-        pressed_color:          RGB((26, 27, 38)),
-        selected_color:         RGBA((122, 162, 247, 20)),
-        selected_hovered_color: RGBA((122, 162, 247, 40)),
-        text_color:             RGB((169, 177, 214)),
+        hovered_color:          RGB((0, 43, 54)),
+        pressed_color:          RGB((7, 54, 66)),
+        selected_color:         RGBA((203, 75, 22, 20)),
+        selected_hovered_color: RGBA((203, 75, 22, 40)),
+        text_color:             RGB((88, 110, 117)),
 
         border_color:           RGBA((0, 0, 0, 0)),
-        selected_border_color:  RGBA((122, 162, 247, 50)),
+        selected_border_color:  RGBA((203, 75, 22, 50)),
         hovered_border_color:   RGBA((0, 0, 0, 0)),
         pressed_border_color:   RGBA((0, 0, 0, 0)),
         border_width:           1.0,
-        border_radius:          (16.0, 16.0, 16.0, 16.0),
+        border_radius:          (4.0, 4.0, 4.0, 4.0),
 
         shadow_color:               RGBA((0, 0, 0, 0)),
         shadow_offset_x:            0.0,
@@ -164,6 +161,9 @@ LauncherConfig
         show_separator:     false,
         separator_color:    RGBA((80, 80, 80, 40)),
         separator_width:    1.0,
+		
+	hot_apps_color:     RGBA((203, 75, 22, 40)),
+
     ),
 
     icon:
@@ -179,18 +179,18 @@ LauncherConfig
         selected_opacity:      1.0,
         hovered_opacity:       1.0,
 
-        background_color:      RGB((38, 39, 58)),
-        hovered_color:         RGB((47, 51, 73)),
-        selected_color:        RGBA((122, 162, 247, 55)),
-        icon_color:            RGB((122, 162, 247)),
+        background_color:      RGB((238, 232, 213)),
+        hovered_color:         RGB((0, 43, 54)),
+        selected_color:        RGBA((203, 75, 22, 55)),
+        icon_color:            RGB((203, 75, 22)),
         selected_icon_color:   RGB((255, 255, 255)),
-        hovered_icon_color:    RGB((122, 162, 247)),
+        hovered_icon_color:    RGB((203, 75, 22)),
 
         border_color:          RGBA((0, 0, 0, 0)),
-        selected_border_color: RGBA((122, 162, 247, 60)),
+        selected_border_color: RGBA((203, 75, 22, 60)),
         hovered_border_color:  RGBA((0, 0, 0, 0)),
         border_width:          1.0,
-        border_radius:         (16.0, 16.0, 16.0, 16.0),
+        border_radius:         (4.0, 4.0, 4.0, 4.0),
     ),
 
     footer:
@@ -202,9 +202,9 @@ LauncherConfig
         count_format:     "{shown} / {total} results",
         single_format:    "{total} result",
         text_size:        11,
-        text_color:       RGB((81, 88, 124)),
-        hint_color:       RGB((81, 88, 124)),
-        count_color:      RGB((122, 162, 247)),
+        text_color:       RGB((147, 161, 161)),
+        hint_color:       RGB((147, 161, 161)),
+        count_color:      RGB((203, 75, 22)),
         font_weight:      Normal,
         font_style:       Normal,
         top_margin:       6.0,

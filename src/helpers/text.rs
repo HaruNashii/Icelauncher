@@ -14,5 +14,6 @@ pub fn truncate_with(s: &str, max: usize, ellipsis: &str) -> String
 
 pub fn apply_entry_text_rules(s: &str, max_chars: usize, ellipsize: bool, _wrap: bool, ellipsis: &str) -> String
 {
-	if ellipsize && max_chars > 0 { truncate_with(s, max_chars, ellipsis) } else { s.to_string() }
+	if max_chars == 0 { return s.to_string(); }
+	if ellipsize { truncate_with(s, max_chars, ellipsis) } else { truncate_with(s, max_chars, "") }
 }

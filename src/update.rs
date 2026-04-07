@@ -23,29 +23,8 @@ pub fn update(app: &mut AppData, message: Message) -> Task<Message>
                     use iced::keyboard;
                     let msg = match key_event
                     {
-                        keyboard::Event::KeyPressed { key, modifiers, .. } =>
-                        {
-                            // In shell mode: ArrowUp/Down cycle through command history
-                            // instead of moving the selection cursor.
-                            if app.shell_mode
-                            {
-                                use iced::keyboard::key::Named;
-                                match &key
-                                {
-                                    iced::keyboard::Key::Named(Named::ArrowUp) =>
-                                        Some(Message::ShellHistoryUp),
-                                    iced::keyboard::Key::Named(Named::ArrowDown) =>
-                                        Some(Message::ShellHistoryDown),
-                                    _ => crate::subscription::handle_key_pressed(key, modifiers, &app.config.keybinds),
-                                }
-                            }
-                            else
-                            {
-                                crate::subscription::handle_key_pressed(key, modifiers, &app.config.keybinds)
-                            }
-                        }
-                        keyboard::Event::KeyReleased { key, .. } =>
-                            crate::subscription::handle_key_released(key, &app.config.keybinds),
+                        keyboard::Event::KeyPressed { key, modifiers, .. } => crate::subscription::handle_key_pressed(key, modifiers, &app.config.keybinds),
+                        keyboard::Event::KeyReleased { key, .. } => crate::subscription::handle_key_released(key, &app.config.keybinds),
                         _ => None,
                     };
                     if let Some(inner) = msg
@@ -72,19 +51,23 @@ pub fn update(app: &mut AppData, message: Message) -> Task<Message>
 
 		Message::ScrollTo(offset) =>
 		{
-			// offset is an absolute pixel value; convert to relative [0,1].
-			// Guard against uninitialised dimensions (before the first
-			// Scrolled event arrives) so we don't snap to a wrong position.
-			if app.content_h <= 0.0 || app.viewport_h <= 0.0 {
+			if app.content_h <= 0.0 || app.viewport_h <= 0.0 
+                        {
 				return Task::none();
 			}
 			let scrollable_range = (app.content_h - app.viewport_h).max(1.0);
 			let relative = (offset / scrollable_range).clamp(0.0, 1.0);
 			app.scroll_offset = relative;
-			return operation::snap_to(
-				Id::new("results_scroll"),
-				scrollable::RelativeOffset { x: 0.0, y: relative },
-			);
+			return operation::snap_to(Id::new("results_scroll"), scrollable::RelativeOffset { x: 0.0, y: relative });
+		}
+
+		Message::HoverEntry(index) =>
+		{
+			let max = crate::helpers::update_helpers::visible_count(app);
+			if index < max
+			{
+				app.hovered = Some(index);
+			}
 		}
 
                 Message::SelectUp    => return on_select_up(app),
@@ -98,18 +81,6 @@ pub fn update(app: &mut AppData, message: Message) -> Task<Message>
 		Message::CopyToClipboard(value) => return on_copy_to_clipboard(app, value),
 		Message::CopiedFeedbackClear => app.copy_feedback = false,
 		Message::Launch(exec) => return on_launch(app, exec),
-		Message::ShellHistoryUp   => return crate::helpers::update_helpers::on_shell_history_up(app),
-		Message::ShellHistoryDown => return crate::helpers::update_helpers::on_shell_history_down(app),
-		Message::HoverEntry(index) =>
-		{
-			app.hovered = Some(index);
-			// Sync keyboard selection to wherever the mouse is.
-			let max = crate::helpers::update_helpers::visible_count(app);
-			if index < max
-			{
-				app.selected = index;
-			}
-		}
 		Message::HoverClear => app.hovered = None,
 		Message::Close => return iced::exit(),
 		_ => {}

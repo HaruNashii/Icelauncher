@@ -41,6 +41,7 @@ fn make_app(
     cfg.entry.comment_size = 11;
     cfg.entry.padding = [6, 10, 0, 0];
     cfg.entry.show_comment = true;
+    cfg.icon.show = false; // disable icons so row_height() matches test expectations (28px base)
 
     AppData {
         filtered: entries.clone(),

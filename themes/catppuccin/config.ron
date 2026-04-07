@@ -1,189 +1,230 @@
 // ╭─────────────────────────────────────────────────────────────────────────╮
 // │                                                                         │
-// │   C A T P P U C C I N   ·   ICELAUNCHER                                │
-// │   Mocha palette. Soft pill. 3-column grid. Search at the bottom.        │
+// │   C A T P P U C C I N   M O C H A   ·   ICELAUNCHER                    │
+// │   Tall sidebar launcher. Left-anchored. Vertical energy.                │
 // │                                                                         │
 // ╰─────────────────────────────────────────────────────────────────────────╯
 //
-//  PALETTE — Catppuccin Mocha
+//  PALETTE — official Catppuccin Mocha
+//    Base     (30,  30,  46)   Surface0 (49, 50, 68)
+//    Mantle   (24,  24,  37)   Overlay0 (108,112,134)
+//    Text     (205,214,244)    Mauve    (203,166,247) ← accent
+//    Subtext  (186,194,222)    Pink     (245,194,231)
+//    Lavender (180,190,254)
 //
-//    base      ( 30,  30,  46)  ← window background
-//    mantle    ( 24,  24,  37)  ← darker surface
-//    surface0  ( 49,  50,  68)  ← module / entry bg
-//    surface1  ( 69,  71,  90)  ← hover
-//    surface2  ( 88,  91, 112)  ← borders
-//    overlay0  (108, 112, 134)  ← muted text
-//    text      (205, 214, 244)  ← primary text
-//    lavender  (180, 190, 254)  ← accent (selected)
-//    mauve     (203, 166, 247)  ← accent (search border, icons)
-//    pink      (245, 194, 231)  ← hover text accent
-//
-//  DESIGN:
-//    · 3-column grid (grid_side_items: 3) — browse apps visually
-//    · Search bar at the BOTTOM — thumb-friendly, Spotlight-inverted
-//    · Rounded window (18px radius) — soft, bubbly feel
-//    · No footer, no scrollbar rail — minimal chrome
-//    · Mauve search border and icon accent, lavender for selected entries
-//    · Icons enabled with real icon support off — consistent fallback glyphs
+//  LAYOUT — TALL SIDEBAR, LEFT ANCHOR
+//    · 380×660 — portrait orientation, tall and narrow
+//    · Left anchor — sits on the left edge like a dock
+//    · Single column (grid_side_items: 1), generous entry spacing
+//    · Search at Bottom — type at the bottom, results scroll up
+//    · Footer at Top — count shows at the very top
 
 LauncherConfig
 (
-
-    // ─────────────────────────────────────────────────────────────────────────
-    //  WINDOW
-    // ─────────────────────────────────────────────────────────────────────────
     window:
     (
-        width:              620,
-        height:             500,
-        max_results:        18,
-        padding:            16,
-        section_spacing:    8,
-        entry_spacing:      6,
-        grid_side_items:    3,
+        width:              380,
+        height:             660,
+        max_results:        16,
+        padding:            12,
+        section_spacing:    0,
+        entry_spacing:      3,
+        grid_side_items:    1,
+        grid_column_spacing: 0,
 
-        border_radius:      (18.0, 18.0, 18.0, 18.0),
-        border_width:       1.0,
-        border_color:       RGB((88, 91, 112)),
-        background_color:   RGBA((30, 30, 46, 97)),
+        border_radius:      (0.0, 10.0, 10.0, 0.0),
+        border_width:       0.0,
+        border_color:       RGBA((0, 0, 0, 0)),
+        background_color:   RGBA((24, 24, 37, 95)),
+        background_gradient: Some(Gradient((180.0, [
+            (0.0, RGBA((24, 24, 37, 98))),
+            (1.0, RGBA((30, 30, 46, 92))),
+        ]))),
 
         shadow_color:       RGBA((0, 0, 0, 60)),
-        shadow_offset_x:    0.0,
-        shadow_offset_y:    8.0,
-        shadow_blur:        32.0,
+        shadow_offset_x:    6.0,
+        shadow_offset_y:    0.0,
+        shadow_blur:        28.0,
+
+        anchor:             Left,
+        margin_top:         0,
+        margin_bottom:      0,
+        margin_left:        0,
+        margin_right:       0,
     ),
 
-
-    // ─────────────────────────────────────────────────────────────────────────
-    //  SCROLLBAR
-    // ─────────────────────────────────────────────────────────────────────────
     scrollbar:
     (
-        show:                   true,
-        width:                  4,
-        margin:                 3,
-        scroller_width:         4,
-        border_radius:          (2.0, 2.0, 2.0, 2.0),
+        show:                    true,
+        width:                   5,
+        margin:                  2,
+        scroller_width:          5,
+        border_radius:           (3.0, 3.0, 3.0, 3.0),
 
-        rail_color:             RGBA((0, 0, 0, 0)),
-        rail_border_color:      RGBA((0, 0, 0, 0)),
-        rail_border_width:      0.0,
+        rail_color:              RGBA((0, 0, 0, 0)),
+        rail_border_color:       RGBA((0, 0, 0, 0)),
+        rail_border_width:       0.0,
 
-        scroller_color:         RGBA((203, 166, 247, 50)),
-        scroller_border_color:  RGBA((0, 0, 0, 0)),
-        scroller_border_width:  0.0,
+        scroller_color:          RGBA((203, 166, 247, 35)),
+        scroller_hovered_color:  RGBA((203, 166, 247, 60)),
+        scroller_dragging_color: RGBA((203, 166, 247, 80)),
+        scroller_border_color:   RGBA((0, 0, 0, 0)),
+        scroller_border_width:   0.0,
     ),
 
-
-    // ─────────────────────────────────────────────────────────────────────────
-    //  SEARCH BAR
-    // ─────────────────────────────────────────────────────────────────────────
     search:
     (
-        placeholder:        "Search applications...",
-        text_size:          15,
-        input_padding:      12,
-        bottom_margin:      0.0,
+        placeholder:               "Search applications...",
+        text_size:                 14,
+        input_padding:             10,
+        bottom_margin:             8.0,
 
-        background_color:   RGB((49, 50, 68)),
-        border_color:       RGB((203, 166, 247)),
-        border_width:       1.5,
-        border_radius:      (10.0, 10.0, 10.0, 10.0),
+        background_color:          RGB((49, 50, 68)),
+        background_gradient:       None,
+        focused_background_color:  RGB((49, 50, 68)),
+        focused_background_gradient: None,
+        border_color:              RGBA((0, 0, 0, 0)),
+        focused_border_color:      RGB((203, 166, 247)),
+        border_width:              1.5,
+        border_radius:             (6.0, 6.0, 6.0, 6.0),
 
-        text_color:         RGB((205, 214, 244)),
-        placeholder_color:  RGB((108, 112, 134)),
-        selection_color:    RGB((180, 190, 254)),
+        text_color:                RGB((205, 214, 244)),
+        placeholder_color:         RGB((108, 112, 134)),
+        selection_color:           RGBA((203, 166, 247, 45)),
 
-        position:           Bottom,
-        orientation:        Horizontal,
-        width:              0,
-        height:             0,
-        fixed_x:            None,
-        fixed_y:            None,
+        icon:                      "",
+        icon_color:                RGB((108, 112, 134)),
+
+        font_weight:               Normal,
+        font_style:                Normal,
+        font_family:               "",
+
+        position:                  Bottom,
+        orientation:               Horizontal,
+        width:                     0,
+        height:                    0,
+        fixed_x:                   None,
+        fixed_y:                   None,
     ),
 
-
-    // ─────────────────────────────────────────────────────────────────────────
-    //  RESULT ENTRIES
-    // ─────────────────────────────────────────────────────────────────────────
     entry:
     (
-        name_size:              13,
+        name_size:              14,
         name_color:             RGB((205, 214, 244)),
+        selected_name_color:    RGB((205, 214, 244)),
+        hovered_name_color:     RGB((205, 214, 244)),
+        name_font_weight:       Normal,
+        name_font_style:        Normal,
+        name_font_family:       "",
+        name_align:             Left,
+        name_max_chars:         35,
 
-        comment_size:           10,
+        comment_size:           11,
         comment_color:          RGB((108, 112, 134)),
-        comment_max_chars:      30,
-        show_comment:           false,
+        selected_comment_color: RGB((147, 153, 178)),
+        hovered_comment_color:  RGB((108, 112, 134)),
+        comment_font_weight:    Normal,
+        comment_font_style:     Normal,
+        comment_font_family:    "",
+        comment_align:          Left,
+        comment_max_chars:      35,
+        show_comment:           true,
+        name_comment_spacing:   2,
 
-        padding:                (10, 8),
+        padding:                (6, 10, 6, 10),
+        label_position:         Right,
+        width:                  0,
+        height:                 0,
 
-        background_color:       RGBA((49, 50, 68, 60)),
+        background_color:       RGBA((0, 0, 0, 0)),
         hovered_color:          RGB((69, 71, 90)),
-        pressed_color:          RGB((30, 30, 46)),
-        selected_color:         RGBA((180, 190, 254, 20)),
-        selected_hovered_color: RGB((180, 190, 254)),
+        pressed_color:          RGB((24, 24, 37)),
+        selected_color:         RGBA((203, 166, 247, 18)),
+        selected_hovered_color: RGBA((203, 166, 247, 45)),
         text_color:             RGB((205, 214, 244)),
 
-        border_color:           RGBA((88, 91, 112, 40)),
-        selected_border_color:  RGB((180, 190, 254)),
+        border_color:           RGBA((0, 0, 0, 0)),
+        selected_border_color:  RGBA((203, 166, 247, 40)),
+        hovered_border_color:   RGBA((0, 0, 0, 0)),
+        pressed_border_color:   RGBA((0, 0, 0, 0)),
         border_width:           1.0,
-        border_radius:          (10.0, 10.0, 10.0, 10.0),
+        border_radius:          (6.0, 6.0, 6.0, 6.0),
 
-        shadow_color:           RGBA((0, 0, 0, 0)),
-        shadow_offset_x:        0.0,
-        shadow_offset_y:        0.0,
-        shadow_blur:            0.0,
+        shadow_color:               RGBA((0, 0, 0, 0)),
+        shadow_offset_x:            0.0,
+        shadow_offset_y:            0.0,
+        shadow_blur:                0.0,
+        selected_shadow_color:      RGBA((0, 0, 0, 0)),
+        selected_shadow_offset_x:   0.0,
+        selected_shadow_offset_y:   0.0,
+        selected_shadow_blur:       0.0,
+        hovered_shadow_color:       RGBA((0, 0, 0, 0)),
+        hovered_shadow_offset_x:    0.0,
+        hovered_shadow_offset_y:    0.0,
+        hovered_shadow_blur:        0.0,
 
-        width:                  0,
-        height:                 70,
+        wrap_word:                      false,
+        ellipsize_instead_of_wrapping:   true,
+        ellipsis:                       "...",
+
+        show_separator:     false,
+        separator_color:    RGBA((80, 80, 80, 40)),
+        separator_width:    1.0,
     ),
 
-
-    // ─────────────────────────────────────────────────────────────────────────
-    //  ICON BADGE
-    // ─────────────────────────────────────────────────────────────────────────
     icon:
     (
-        show:               true,
-        use_real_icons:     false,
-        width:              32,
-        height:             32,
-        text_size:          16,
-        gap:                8,
+        show:                  true,
+        use_real_icons:        true,
+        width:                 34,
+        height:                34,
+        text_size:             17,
+        gap:                   10,
+        padding:               (0, 0),
+        opacity:               1.0,
+        selected_opacity:      1.0,
+        hovered_opacity:       1.0,
 
-        background_color:   RGB((49, 50, 68)),
-        selected_color:     RGB((180, 190, 254)),
-        icon_color:         RGB((203, 166, 247)),
+        background_color:      RGB((49, 50, 68)),
+        hovered_color:         RGB((69, 71, 90)),
+        selected_color:        RGBA((203, 166, 247, 60)),
+        icon_color:            RGB((203, 166, 247)),
+        selected_icon_color:   RGB((255, 255, 255)),
+        hovered_icon_color:    RGB((203, 166, 247)),
 
-        border_color:       RGB((88, 91, 112)),
-        border_width:       1.0,
-        border_radius:      (8.0, 8.0, 8.0, 8.0),
+        border_color:          RGBA((0, 0, 0, 0)),
+        selected_border_color: RGBA((203, 166, 247, 50)),
+        hovered_border_color:  RGBA((0, 0, 0, 0)),
+        border_width:          1.0,
+        border_radius:         (8.0, 8.0, 8.0, 8.0),
     ),
 
-
-    // ─────────────────────────────────────────────────────────────────────────
-    //  FOOTER
-    // ─────────────────────────────────────────────────────────────────────────
     footer:
     (
-        show:           false,
-        show_hint:      false,
-        hint_text:      "",
-        show_count:     false,
-        text_size:      11,
-        text_color:     RGB((108, 112, 134)),
-        top_margin:     0.0,
-        position:       Bottom,
+        show:             true,
+        show_hint:        false,
+        hint_text:        "",
+        show_count:       true,
+        count_format:     "{shown} / {total} results",
+        single_format:    "{total} result",
+        text_size:        11,
+        text_color:       RGB((108, 112, 134)),
+        hint_color:       RGB((108, 112, 134)),
+        count_color:      RGB((203, 166, 247)),
+        font_weight:      Normal,
+        font_style:       Normal,
+        top_margin:       6.0,
+        padding:          (0, 0, 0, 0),
+        background_color: RGBA((0, 0, 0, 0)),
+        border_color:     RGBA((0, 0, 0, 0)),
+        border_width:     0.0,
+        border_radius:    (0.0, 0.0, 0.0, 0.0),
+        position:         Top,
         text_orientation: Horizontal,
-        width:          0,
-        height:         0,
+        width:            0,
+        height:           0,
     ),
 
-
-    // ─────────────────────────────────────────────────────────────────────────
-    //  SEARCH BEHAVIOUR
-    // ─────────────────────────────────────────────────────────────────────────
     behaviour:
     (
         search_name:        true,
@@ -196,6 +237,20 @@ LauncherConfig
         calc_enabled:           true,
         copy_feedback_text:     "Copied!",
         copy_feedback_seconds:  2.0,
+        min_query_length:       0,
+        show_on_empty_query:    true,
+        max_empty_results:      0,
+    ),
+
+    keybinds:
+    (
+        close:              ["Escape"],
+        select_up:          ["ArrowUp"],
+        select_down:        ["ArrowDown"],
+        select_left:        ["ArrowLeft"],
+        select_right:       ["ArrowRight", "Tab"],
+        launch_alt_prefix:  "Alt",
+        relaunch_key:       "l",
     ),
 
     background_images: [],

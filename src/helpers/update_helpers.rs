@@ -22,6 +22,7 @@ pub fn on_entries_loaded(app: &mut AppData, entries: Vec<AppEntry>) -> Task<Mess
 	app.entries = entries;
 	app.selected = 0;
 	app.scroll_offset = 0.0;
+	app.hovered = None;
 
 	Task::batch(vec![
 		focus("search_input"),
@@ -38,11 +39,14 @@ pub fn on_query_changed(app: &mut AppData, query: String) -> Task<Message>
 	app.filtered = filter_entries(&app.entries, &query, &app.config, &app.frecency);
 	app.query = query;
 	app.selected = 0;
-	// Any manual query change breaks out of history cycling.
-	app.shell_history_index = None;
+	// Stale hover index is meaningless after the list changes.
+	app.hovered = None;
 	app.scroll_offset = 0.0;
-	app.viewport_h = 0.0;
-	app.content_h = 0.0;
+	// Do NOT zero viewport_h / content_h here. The scrollable widget's
+	// dimensions don't change between queries — only the content changes.
+	// Zeroing them would make scroll_to_selected bail out early (it guards
+	// against uninitialised dimensions) until the user manually scrolls
+	// with the mouse, which is exactly the reported bug.
 
 	// Reset the scrollable widget's actual position, not just our cached state.
 	operation::snap_to(
@@ -64,7 +68,18 @@ pub fn on_select_up(app: &mut AppData) -> Task<Message>
 	let current_col = app.selected % cols;
 	let prev_row = if current_row == 0 { (max - 1) / cols } else { current_row - 1 };
 
-	app.selected = (prev_row * cols + current_col).min(max - 1);
+	// Clamp the column to however many items actually exist in the destination
+	// row — the last row may be partial (e.g. 5 items in a 3-col grid has only
+	// 2 items in row 1). Without this, pressing Up from col 2 of the first row
+	// would silently land on the wrong index.
+	let items_in_prev_row = {
+		let row_start = prev_row * cols;
+		let row_end   = (row_start + cols).min(max);
+		row_end - row_start
+	};
+	let clamped_col = current_col.min(items_in_prev_row.saturating_sub(1));
+
+	app.selected = prev_row * cols + clamped_col;
 	scroll_to_selected(app)
 }
 
@@ -225,49 +240,4 @@ pub fn visible_count(app: &AppData) -> usize
 pub fn calc_display_value(name: &str) -> String
 {
 	name.trim_start_matches("= ").to_string()
-}
-
-
-pub fn on_shell_history_up(app: &mut AppData) -> Task<Message>
-{
-	if !app.shell_mode {
-		return Task::none();
-	}
-
-	// Build history list lazily: top frecency entries, most-recent first.
-	let history = app.frecency.top_n(50);
-	if history.is_empty() {
-		return Task::none();
-	}
-
-	let next_index = match app.shell_history_index {
-		None    => 0,
-		Some(i) => (i + 1).min(history.len() - 1),
-	};
-
-	app.shell_history_index = Some(next_index);
-	let query = history[next_index].clone();
-	on_query_changed(app, query)
-}
-
-
-pub fn on_shell_history_down(app: &mut AppData) -> Task<Message>
-{
-	if !app.shell_mode {
-		return Task::none();
-	}
-
-	match app.shell_history_index {
-		None | Some(0) => {
-			app.shell_history_index = None;
-			on_query_changed(app, String::new())
-		}
-		Some(i) => {
-			let history = app.frecency.top_n(50);
-			let prev_index = i - 1;
-			app.shell_history_index = Some(prev_index);
-			let query = history.get(prev_index).cloned().unwrap_or_default();
-			on_query_changed(app, query)
-		}
-	}
 }

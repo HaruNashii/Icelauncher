@@ -10,6 +10,7 @@ pub fn evaluate_as_calculator(expr: &str) -> Option<AppEntry>
 	let value = try_evaluate(expr.trim())?;
 	Some(AppEntry {
 		name: format!("= {}", value),
+		generic_name: String::new(),
 		exec: String::new(),
 		comment: expr.trim().to_string(),
 		icon: String::new(),
@@ -17,6 +18,7 @@ pub fn evaluate_as_calculator(expr: &str) -> Option<AppEntry>
 		keywords: Vec::new(),
 		terminal: false,
 		name_lc: String::new(),
+		generic_name_lc: String::new(),
 		exec_lc: String::new(),
 		comment_lc: String::new(),
 		keywords_lc: Vec::new(),

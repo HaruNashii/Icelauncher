@@ -5,6 +5,16 @@ use serde::{Deserialize, Serialize};
 
 
 // ============ ENUM/STRUCT, ETC ============
+
+/// A linear gradient: `(angle_degrees, stops)` where each stop is
+/// `(position_0_to_1, color)`.  Matches the format used in icebar so
+/// theme files are portable between the two apps.
+#[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
+pub enum Gradient
+{
+	Gradient((f32, Vec<(f32, ColorType)>)),
+}
+
 #[allow(clippy::upper_case_acronyms)]
 #[derive(Copy, Clone, Debug, PartialEq, Serialize)]
 pub enum ColorType
@@ -97,5 +107,27 @@ pub fn hex_to_iced(bytes: &[u8; 9]) -> Option<iced::Color>
 		Some(iced::Color::from_rgba8(r, g, b, a as f32 / 255.))
 	} else {
 		None
+	}
+}
+
+
+/// Resolve a gradient-or-color config value into an iced `Background`.
+/// When `gradient` is `Some`, the gradient wins; otherwise the flat `color`
+/// is used.  This mirrors `match_color_or_gradient` from icebar's style.rs.
+pub fn color_or_gradient(gradient: Option<&Gradient>, color: ColorType) -> iced::Background
+{
+	use iced_layershell::reexport::core::{Degrees, gradient::Linear};
+	match gradient
+	{
+		Some(Gradient::Gradient((angle, stops))) =>
+		{
+			let mut g = Linear::new(Degrees(*angle));
+			for (pos, col) in stops
+			{
+				g = g.add_stop(*pos, col.to_iced());
+			}
+			iced::Background::Gradient(g.into())
+		}
+		None => iced::Background::Color(color.to_iced()),
 	}
 }

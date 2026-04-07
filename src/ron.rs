@@ -6,16 +6,66 @@ use serde::{Deserialize, Serialize};
 
 
 // ============ CRATES ============
-use crate::helpers::color::{ColorType, hex_color};
+use crate::helpers::color::{ColorType, Gradient, hex_color};
 
 
 
 
 // ============ STATIC'S/CONST'S ============
+//
+// DEFAULT_CONFIG_TEXT
+//
+// This is the default configuration file written to disk the first time
+// icelauncher runs without an existing config at:
+//   ~/.config/icelauncher/config.ron
+//
+// The format is RON (Rusty Object Notation), a Rust-friendly alternative to
+// JSON/TOML. Each top-level section maps to a typed struct in this file:
+//
+//   window    → WindowConfig      — launcher window size, border, shadow, anchor
+//   scrollbar → ScrollbarConfig   — scrollbar rail and scroller appearance
+//   search    → SearchConfig      — search bar colors, fonts, position, gradients
+//   entry     → EntryConfig       — result row colors, fonts, shadow, separators
+//   icon      → IconConfig        — app icon size, colors, border, gradients
+//   footer    → FooterConfig      — result count bar at the bottom
+//   behaviour → SearchBehaviourConfig — fuzzy search rules, calc, terminal
+//   keybinds  → KeybindConfig     — keyboard shortcuts
+//   background_images             — optional decorative background images
+//
+// COLOR VALUES
+//   Colors can be written in three ways:
+//     RGB((r, g, b))         — opaque, channels 0–255
+//     RGBA((r, g, b, a))     — with alpha 0–100 (percent)
+//     HEX("rrggbb")          — 6-digit hex string (# prefix optional)
+//     HEX("rrggbbaa")        — 8-digit hex with alpha 00–ff
+//
+// GRADIENT VALUES
+//   Any field named *_gradient accepts either None (flat color fallback) or:
+//     Some(Gradient((angle_degrees, [(position, color), ...])))
+//   where position is 0.0–1.0 along the gradient axis.
+//   Example:
+//     background_gradient: Some(Gradient((90.0, [
+//         (0.0, HEX("1a1a2e")),
+//         (1.0, HEX("303050")),
+//     ]))),
+//   When a gradient is set it takes priority over the matching *_color field.
+//
+// BORDER RADIUS
+//   All border_radius fields are 4-tuples: (top_left, top_right, bottom_left, bottom_right)
+//
+// OPTIONAL LENGTHS (width / height)
+//   A value of 0 means "use the natural/fill size" for that dimension.
+//
+// EDITING TIPS
+//   • After editing, save the file and relaunch — no hot-reload yet.
+//   • Invalid RON will be logged and defaults used instead.
+//   • Delete the file to reset everything to these defaults.
+//
 const DEFAULT_CONFIG_TEXT: &str = r#"LauncherConfig
 (
     window:
     (
+        display:            None,
         width:              560,
         height:             480,
         max_results:        12,
@@ -69,7 +119,9 @@ const DEFAULT_CONFIG_TEXT: &str = r#"LauncherConfig
         bottom_margin:             8.0,
 
         background_color:          HEX("303030"),
+        background_gradient:       None,
         focused_background_color:  HEX("303030"),
+        focused_background_gradient: None,
         border_color:              HEX("1c71d8"),
         focused_border_color:      HEX("1c71d8"),
         border_width:              1.5,
@@ -157,6 +209,13 @@ const DEFAULT_CONFIG_TEXT: &str = r#"LauncherConfig
         show_separator:     false,
         separator_color:    RGBA((80, 80, 80, 60)),
         separator_width:    1.0,
+
+        show_shortcut_hint: true,
+
+        show_hot_apps:      true,
+        hot_apps_threshold: 4,
+        hot_apps_icon: "🔥",
+        hot_apps_color: HEX("1c71d8")
     ),
 
     icon:
@@ -401,6 +460,7 @@ impl Default for ScrollbarConfig
 #[serde(default)]
 pub struct WindowConfig
 {
+    pub display: Option<String>,
     pub width: u32,
     pub height: u32,
     pub max_results: usize,
@@ -413,6 +473,7 @@ pub struct WindowConfig
     pub border_width: f32,
     pub border_color: ColorType,
     pub background_color: ColorType,
+    pub background_gradient: Option<Gradient>,
     pub shadow_color: ColorType,
     pub shadow_offset_x: f32,
     pub shadow_offset_y: f32,
@@ -430,6 +491,7 @@ impl Default for WindowConfig
     {
         Self 
         {
+            display: None,
             width: 560,
             height: 480,
             max_results: 12,
@@ -442,6 +504,7 @@ impl Default for WindowConfig
             border_width: 1.0,
             border_color: hex_color("3d3d3d"),
             background_color: ColorType::RGBA([36, 36, 36, 97]),
+            background_gradient: None,
             shadow_color: ColorType::RGBA([0, 0, 0, 50]),
             shadow_offset_x: 0.0,
             shadow_offset_y: 4.0,
@@ -486,7 +549,9 @@ pub struct SearchConfig
     pub input_padding: u32,
     pub bottom_margin: f32,
     pub background_color: ColorType,
+    pub background_gradient: Option<Gradient>,
     pub focused_background_color: ColorType,
+    pub focused_background_gradient: Option<Gradient>,
     pub border_color: ColorType,
     pub focused_border_color: ColorType,
     pub border_width: f32,
@@ -518,7 +583,9 @@ impl Default for SearchConfig
             input_padding: 10,
             bottom_margin: 8.0,
             background_color: hex_color("303030"),
+            background_gradient: None,
             focused_background_color: hex_color("303030"),
+            focused_background_gradient: None,
             border_color: hex_color("1c71d8"),
             focused_border_color: hex_color("1c71d8"),
             border_width: 1.5,
@@ -573,10 +640,15 @@ pub struct EntryConfig
     pub height: u32,
 
     pub background_color: ColorType,
+    pub background_gradient: Option<Gradient>,
     pub hovered_color: ColorType,
+    pub hovered_gradient: Option<Gradient>,
     pub pressed_color: ColorType,
+    pub pressed_gradient: Option<Gradient>,
     pub selected_color: ColorType,
+    pub selected_gradient: Option<Gradient>,
     pub selected_hovered_color: ColorType,
+    pub selected_hovered_gradient: Option<Gradient>,
     pub text_color: ColorType,
 
     pub border_color: ColorType,
@@ -606,6 +678,12 @@ pub struct EntryConfig
     pub show_separator: bool,
     pub separator_color: ColorType,
     pub separator_width: f32,
+
+    pub show_shortcut_hint: bool,
+    pub show_hot_apps:      bool,
+    pub hot_apps_threshold: usize,
+    pub hot_apps_icon:      String,
+    pub hot_apps_color:     ColorType
 }
 
 impl Default for EntryConfig
@@ -643,10 +721,15 @@ impl Default for EntryConfig
             height: 0,
 
             background_color: ColorType::RGBA([0, 0, 0, 0]),
+            background_gradient: None,
             hovered_color: hex_color("3d3d3d"),
+            hovered_gradient: None,
             pressed_color: hex_color("1c1c1c"),
+            pressed_gradient: None,
             selected_color: ColorType::RGBA([28, 113, 216, 18]),
+            selected_gradient: None,
             selected_hovered_color: hex_color("2080e8"),
+            selected_hovered_gradient: None,
             text_color: ColorType::RGB([255, 255, 255]),
 
             border_color: ColorType::RGBA([0, 0, 0, 0]),
@@ -676,6 +759,12 @@ impl Default for EntryConfig
             show_separator: false,
             separator_color: ColorType::RGBA([80, 80, 80, 60]),
             separator_width: 1.0,
+
+            show_shortcut_hint: true,
+            show_hot_apps: true,
+            hot_apps_threshold: 4,
+            hot_apps_icon: "🔥".to_string(),
+            hot_apps_color: hex_color("#1c71d8"),
         }
     }
 }
@@ -695,8 +784,11 @@ pub struct IconConfig
     pub selected_opacity: f32,
     pub hovered_opacity: f32,
     pub background_color: ColorType,
+    pub background_gradient: Option<Gradient>,
     pub hovered_color: ColorType,
+    pub hovered_gradient: Option<Gradient>,
     pub selected_color: ColorType,
+    pub selected_gradient: Option<Gradient>,
     pub icon_color: ColorType,
     pub selected_icon_color: ColorType,
     pub hovered_icon_color: ColorType,
@@ -724,8 +816,11 @@ impl Default for IconConfig
             selected_opacity: 1.0,
             hovered_opacity: 1.0,
             background_color: hex_color("303030"),
+            background_gradient: None,
             hovered_color: hex_color("303030"),
+            hovered_gradient: None,
             selected_color: hex_color("1c71d8"),
+            selected_gradient: None,
             icon_color: hex_color("1c71d8"),
             selected_icon_color: ColorType::RGB([255, 255, 255]),
             hovered_icon_color: hex_color("1c71d8"),
@@ -777,6 +872,7 @@ pub struct FooterConfig
     pub top_margin: f32,
     pub padding: [u32; 4],
     pub background_color: ColorType,
+    pub background_gradient: Option<Gradient>,
     pub border_color: ColorType,
     pub border_width: f32,
     pub border_radius: [f32; 4],
@@ -807,6 +903,7 @@ impl Default for FooterConfig
             top_margin: 6.0,
             padding: [0, 0, 0, 0],
             background_color: ColorType::RGBA([0, 0, 0, 0]),
+            background_gradient: None,
             border_color: ColorType::RGBA([0, 0, 0, 0]),
             border_width: 0.0,
             border_radius: [0.0, 0.0, 0.0, 0.0],

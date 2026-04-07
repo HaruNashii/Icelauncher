@@ -7,6 +7,7 @@ use iced_layershell::reexport::core::Border;
 
 // ============ CRATES ============
 use crate::{AppData, Message};
+use crate::helpers::color::color_or_gradient;
 use crate::helpers::widget::{corner_radius, make_font, optional_length, optional_length_shrink};
 use crate::ron::{FooterOrientation, FooterPosition};
 
@@ -47,7 +48,7 @@ pub fn build_footer(app: &AppData) -> Element<'_, Message>
 
     let fp    = footer_config.padding;
     let fbr   = footer_config.border_radius;
-    let fc_bg = footer_config.background_color.to_iced();
+    let fc_bg = color_or_gradient(footer_config.background_gradient.as_ref(), footer_config.background_color);
     let fc_bc = footer_config.border_color.to_iced();
     let fc_bw = footer_config.border_width;
     let inner_pad = Padding 
@@ -83,7 +84,7 @@ pub fn build_footer(app: &AppData) -> Element<'_, Message>
         .height(fc_h)
         .style(move |_| container::Style 
         {
-            background: Some(iced::Background::Color(fc_bg)),
+            background: Some(fc_bg),
             border: Border { color: fc_bc, width: fc_bw, radius: corner_radius(fbr) },
             ..Default::default()
         })
@@ -100,7 +101,7 @@ fn resolve_hint_text(footer_config: &crate::ron::FooterConfig, shell_mode: bool)
     }
     if shell_mode
     {
-        "↑↓ navigate  •  Enter run  •  Alt+1-9 quick run  •  Esc close  •  [shell mode]".to_string()
+        "↑↓ history  •  Enter run  •  Alt+1-9 quick run  •  Esc close  •  [shell mode]".to_string()
     }
     else
     {

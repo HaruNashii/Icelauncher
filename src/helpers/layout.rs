@@ -7,6 +7,7 @@ use iced_layershell::reexport::core::{Border, Shadow};
 
 // ============ CRATES ============
 use crate::{AppData, Message};
+use crate::helpers::color::color_or_gradient;
 use crate::helpers::widget::{corner_radius, optional_length_shrink};
 use crate::ron::SearchPosition;
 
@@ -76,8 +77,6 @@ pub fn build_window_panel<'a>(app: &'a AppData, content: Element<'a, Message>) -
 {
     let window_config = &app.config.window;
     let has_bg_images = app.config.background_images.iter().any(|bg| !bg.path.is_empty());
-    let panel_bg = if has_bg_images { Color::TRANSPARENT } else { window_config.background_color.to_iced() };
-
     let wr = window_config.border_radius;
     let w_bc = window_config.border_color.to_iced();
     let w_bw = window_config.border_width;
@@ -88,12 +87,21 @@ pub fn build_window_panel<'a>(app: &'a AppData, content: Element<'a, Message>) -
         blur_radius: window_config.shadow_blur,
     };
 
+    let panel_bg = if has_bg_images
+    {
+        iced::Background::Color(Color::TRANSPARENT)
+    }
+    else
+    {
+        color_or_gradient(window_config.background_gradient.as_ref(), window_config.background_color)
+    };
+
     let panel: Element<Message> = container(content)
         .width(window_config.width)
         .height(window_config.height)
         .style(move |_| container::Style 
         {
-            background: Some(iced::Background::Color(panel_bg)),
+            background: Some(panel_bg),
             text_color: Some(Color::WHITE),
             snap: false,
             border: Border 
@@ -122,7 +130,7 @@ fn build_layered_panel<'a>(app: &'a AppData, panel: Element<'a, Message>) -> Ele
     let wr = window_config.border_radius;
     let w_bc = window_config.border_color.to_iced();
     let w_bw = window_config.border_width;
-    let w_bg = window_config.background_color.to_iced();
+    let w_bg = color_or_gradient(window_config.background_gradient.as_ref(), window_config.background_color);
     let win_w = window_config.width;
     let win_h = window_config.height;
 
@@ -133,7 +141,7 @@ fn build_layered_panel<'a>(app: &'a AppData, panel: Element<'a, Message>) -> Ele
             .height(win_h)
             .style(move |_| container::Style 
             {
-                background: Some(iced::Background::Color(w_bg)),
+                background: Some(w_bg),
                 border: Border 
                 { 
                     color: w_bc,

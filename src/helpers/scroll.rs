@@ -6,7 +6,7 @@ use iced::Task;
 
 
 // ============ CRATES ============
-use crate::ron::EntryConfig;
+use crate::ron::{EntryConfig, IconConfig, LabelPosition};
 use crate::{AppData, Message};
 
 
@@ -70,17 +70,31 @@ pub fn scroll_to_selected(app: &mut AppData) -> Task<Message>
 }
 
 
-pub fn row_height(entry_config: &EntryConfig, has_comment: bool) -> f32
+pub fn row_height(entry_config: &EntryConfig, icon_config: &IconConfig, has_comment: bool) -> f32
 {
-	let padding = entry_config.padding;
-	// Use top (padding[0]) + bottom (padding[2]) — not top*2 — so asymmetric
-	// padding configs are accounted for correctly.
-	let base = (entry_config.name_size as f32) + (padding[0] as f32) + (padding[2] as f32) + 8.0;
-	if has_comment {
-		// Use the configurable name_comment_spacing instead of a hardcoded 6.0.
-		base + (entry_config.comment_size as f32) + (entry_config.name_comment_spacing as f32)
-	} else {
-		base
+	let padding     = entry_config.padding;
+	let text_height = (entry_config.name_size as f32)
+		+ if has_comment
+		{
+			(entry_config.comment_size as f32) + (entry_config.name_comment_spacing as f32)
+		}
+		else { 0.0 };
+
+	match entry_config.label_position
+	{
+		// Icon stacked above or below label — total height is icon + gap + text + padding
+		LabelPosition::Below | LabelPosition::Above =>
+		{
+			let icon_h = if icon_config.show { icon_config.height as f32 } else { 0.0 };
+			let gap    = if icon_config.show { icon_config.gap    as f32 } else { 0.0 };
+			(padding[0] as f32) + icon_h + gap + text_height + (padding[2] as f32)
+		}
+		// Icon beside label — height is whichever is taller + padding
+		LabelPosition::Left | LabelPosition::Right =>
+		{
+			let icon_h = if icon_config.show { icon_config.height as f32 } else { 0.0 };
+			(padding[0] as f32) + text_height.max(icon_h) + (padding[2] as f32) + 8.0
+		}
 	}
 }
 
@@ -88,6 +102,7 @@ pub fn row_height(entry_config: &EntryConfig, has_comment: bool) -> f32
 fn compute_row_heights(app: &AppData, cols: usize, max: usize, total_rows: usize) -> Vec<f32>
 {
 	let entry_config = &app.config.entry;
+	let icon_config  = &app.config.icon;
 	(0..total_rows)
 		.map(|row| {
 			let start = row * cols;
@@ -95,7 +110,7 @@ fn compute_row_heights(app: &AppData, cols: usize, max: usize, total_rows: usize
 			let row_has_comment = app.filtered[start..end]
 				.iter()
 				.any(|e| entry_config.show_comment && !e.comment.is_empty());
-			row_height(entry_config, row_has_comment)
+			row_height(entry_config, icon_config, row_has_comment)
 		})
 		.collect()
 }

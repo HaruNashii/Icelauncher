@@ -1,6 +1,5 @@
 // ============ IMPORTS ============
 use std::path::{Path, PathBuf};
-
 use rayon::prelude::*;
 
 
@@ -61,6 +60,7 @@ pub fn scan_shell_commands() -> Vec<AppEntry>
 
 			let entry = AppEntry {
 				name: name.to_string(),
+				generic_name: String::new(),
 				exec: name.to_string(),
 				comment: String::new(),
 				icon: String::new(),
@@ -68,6 +68,7 @@ pub fn scan_shell_commands() -> Vec<AppEntry>
 				keywords: Vec::new(),
 				terminal: false,
 				name_lc: String::new(),
+				generic_name_lc: String::new(),
 				exec_lc: String::new(),
 				comment_lc: String::new(),
 				keywords_lc: Vec::new(),
@@ -150,10 +151,16 @@ pub fn parse_desktop_file_for_session(path: &Path, current_desktop: Option<&[Str
 	let locale_short: String = locale.split('_').next().unwrap_or("").to_string();
 
 	let mut name = String::new();
-	let mut name_locale = String::new();     // Name[xx_YY]=
-	let mut name_locale_short = String::new(); // Name[xx]=
+	let mut name_locale = String::new();           // Name[xx_YY]=
+	let mut name_locale_short = String::new();     // Name[xx]=
+	let mut generic_name = String::new();
+	let mut generic_locale = String::new();        // GenericName[xx_YY]=
+	let mut generic_locale_short = String::new();  // GenericName[xx]=
 	let mut exec = String::new();
+	let mut try_exec = String::new();
 	let mut comment = String::new();
+	let mut comment_locale = String::new();        // Comment[xx_YY]=
+	let mut comment_locale_short = String::new();  // Comment[xx]=
 	let mut icon = String::new();
 	let mut keywords = Vec::new();
 	let mut terminal = false;
@@ -199,6 +206,12 @@ pub fn parse_desktop_file_for_session(path: &Path, current_desktop: Option<&[Str
 			not_show_in = parse_semicolon_list(v);
 		}
 
+		// TryExec: if the key is present, the binary must exist on $PATH.
+		if let Some(v) = line.strip_prefix("TryExec=") && try_exec.is_empty()
+		{
+			try_exec = v.trim().to_string();
+		}
+
 		// Locale-aware Name parsing: prefer Name[xx_YY], fall back to Name[xx], then Name.
 		if let Some(v) = line.strip_prefix("Name=") && name.is_empty()
 		{
@@ -212,14 +225,37 @@ pub fn parse_desktop_file_for_session(path: &Path, current_desktop: Option<&[Str
 			if let Some(v) = line.strip_prefix(key_short.as_str()) && name_locale_short.is_empty() { name_locale_short = v.to_string(); }
 		}
 
+		// GenericName with locale fallback.
+		if let Some(v) = line.strip_prefix("GenericName=") && generic_name.is_empty()
+		{
+			generic_name = v.to_string();
+		}
+		if !locale.is_empty()
+		{
+			let key_full  = format!("GenericName[{}]=", locale);
+			let key_short = format!("GenericName[{}]=", locale_short);
+			if let Some(v) = line.strip_prefix(key_full.as_str())  && generic_locale.is_empty()       { generic_locale = v.to_string(); }
+			if let Some(v) = line.strip_prefix(key_short.as_str()) && generic_locale_short.is_empty() { generic_locale_short = v.to_string(); }
+		}
+
 		if let Some(v) = line.strip_prefix("Exec=") && exec.is_empty()
 		{
 			exec = sanitize_exec(v);
 		}
+
+		// Comment with locale fallback.
 		if let Some(v) = line.strip_prefix("Comment=") && comment.is_empty()
 		{
 			comment = v.to_string();
 		}
+		if !locale.is_empty()
+		{
+			let key_full  = format!("Comment[{}]=", locale);
+			let key_short = format!("Comment[{}]=", locale_short);
+			if let Some(v) = line.strip_prefix(key_full.as_str())  && comment_locale.is_empty()       { comment_locale = v.to_string(); }
+			if let Some(v) = line.strip_prefix(key_short.as_str()) && comment_locale_short.is_empty() { comment_locale_short = v.to_string(); }
+		}
+
 		if let Some(v) = line.strip_prefix("Icon=") && icon.is_empty()
 		{
 			icon = v.to_string();
@@ -231,6 +267,12 @@ pub fn parse_desktop_file_for_session(path: &Path, current_desktop: Option<&[Str
 	}
 
 	if no_display || hidden || name.is_empty() || exec.is_empty()
+	{
+		return None;
+	}
+
+	// TryExec: hide the entry if the specified binary cannot be found on $PATH.
+	if !try_exec.is_empty() && which::which(&try_exec).is_err()
 	{
 		return None;
 	}
@@ -253,15 +295,27 @@ pub fn parse_desktop_file_for_session(path: &Path, current_desktop: Option<&[Str
 	                    else if !name_locale_short.is_empty() { name_locale_short }
 	                    else                              { name };
 
+	// Resolve localized GenericName.
+	let resolved_generic = if !generic_locale.is_empty()       { generic_locale }
+	                       else if !generic_locale_short.is_empty() { generic_locale_short }
+	                       else                               { generic_name };
+
+	// Resolve localized Comment.
+	let resolved_comment = if !comment_locale.is_empty()       { comment_locale }
+	                       else if !comment_locale_short.is_empty() { comment_locale_short }
+	                       else                               { comment };
+
 	Some(AppEntry {
 		name: resolved_name,
+		generic_name: resolved_generic,
 		exec,
-		comment,
+		comment: resolved_comment,
 		icon,
 		icon_path: None,
 		keywords,
 		terminal,
 		name_lc: String::new(),
+		generic_name_lc: String::new(),
 		exec_lc: String::new(),
 		comment_lc: String::new(),
 		keywords_lc: Vec::new(),

@@ -1,190 +1,225 @@
 // ╭─────────────────────────────────────────────────────────────────────────╮
-// │                                                                         │
 // │   D R A C U L A   ·   ICELAUNCHER                                       │
-// │   Vampire dark. 2-column grid. Search pinned to the right side.         │
-// │                                                                         │
+// │   Floating pill. Bottom-center. Wide island, like the icebar.           │
 // ╰─────────────────────────────────────────────────────────────────────────╯
 //
 //  PALETTE — official Dracula
+//    background (40,42,54)  currentLine (68,71,90)  foreground (248,248,242)
+//    cyan (139,233,253)  green (80,250,123)  orange (255,184,108)
+//    pink (255,121,198) ← PRIMARY ACCENT  purple (189,147,249)
+//    red (255,85,85)  yellow (241,250,140)
 //
-//    background  ( 40,  42,  54)  ← window bg
-//    currentLine ( 68,  71,  90)  ← entry hover / search bg
-//    foreground  (248, 248, 242)  ← primary text
-//    comment     ( 98, 114, 164)  ← muted text / footer
-//    cyan        (139, 233, 253)  ← icon accent
-//    green       ( 80, 250, 123)  ← selected border
-//    orange      (255, 184, 108)  ← footer text
-//    pink        (255, 121, 198)  ← search border / selected bg
-//    purple      (189, 147, 249)  ← icon bg / hover
-//    red         (255,  85,  85)  ← pressed
-//    yellow      (241, 250, 140)  ← name text accent
-//
-//  DESIGN:
-//    · 2-column grid (grid_side_items: 2) — balanced browsing
-//    · Search bar on the RIGHT side — vertical, narrow, always visible
-//    · Pill window (22px radius) — matches Dracula bar's massive radius
-//    · Pink search border — the vampire's fangs
-//    · Purple icon badges — cyan glyph pops against dark purple
-//    · Footer with orange count text — warm contrast against the cold dark
+//  LAYOUT — WIDE PILL, BOTTOM-CENTER
+//    · 900×320 — very wide, short. Bottom floating island.
+//    · Bottom anchor — mirrors the icebar's bottom island feel.
+//    · 3-column grid (grid_side_items: 3) — app grid like a launchpad.
+//    · Huge border radius (22px) — full pill.
+//    · Search at Bottom.
 
 LauncherConfig
 (
-
-    // ─────────────────────────────────────────────────────────────────────────
-    //  WINDOW
-    // ─────────────────────────────────────────────────────────────────────────
     window:
     (
-        width:              560,
-        height:             460,
-        max_results:        12,
-        padding:            12,
-        section_spacing:    6,
-        entry_spacing:      5,
-        grid_side_items:    2,
+        width:              900,
+        height:             320,
+        max_results:        9,
+        padding:            16,
+        section_spacing:    0,
+        entry_spacing:      4,
+        grid_side_items:    3,
+        grid_column_spacing: 6,
 
         border_radius:      (22.0, 22.0, 22.0, 22.0),
         border_width:       0.0,
         border_color:       RGBA((0, 0, 0, 0)),
-        background_color:   RGBA((40, 42, 54, 98)),
+        background_color:   RGBA((40, 42, 54, 100)),
+        background_gradient: Some(Gradient((180.0, [
+            (0.0, RGBA((40, 42, 54, 100))),
+            (1.0, RGBA((30, 32, 42, 100))),
+        ]))),
 
         shadow_color:       RGBA((0, 0, 0, 70)),
         shadow_offset_x:    0.0,
-        shadow_offset_y:    12.0,
-        shadow_blur:        40.0,
+        shadow_offset_y:    -8.0,
+        shadow_blur:        32.0,
+
+        anchor:             Bottom,
+        margin_top:         0,
+        margin_bottom:      10,
+        margin_left:        0,
+        margin_right:       0,
     ),
 
-
-    // ─────────────────────────────────────────────────────────────────────────
-    //  SCROLLBAR
-    // ─────────────────────────────────────────────────────────────────────────
     scrollbar:
     (
-        show:                   true,
-        width:                  5,
-        margin:                 2,
-        scroller_width:         5,
-        border_radius:          (3.0, 3.0, 3.0, 3.0),
-
-        rail_color:             RGBA((68, 71, 90, 40)),
-        rail_border_color:      RGBA((0, 0, 0, 0)),
-        rail_border_width:      0.0,
-
-        scroller_color:         RGBA((255, 121, 198, 60)),
-        scroller_border_color:  RGBA((0, 0, 0, 0)),
-        scroller_border_width:  0.0,
+        show:                    false,
+        width:                   6,
+        margin:                  2,
+        scroller_width:          6,
+        border_radius:           (12.0, 12.0, 12.0, 12.0),
+        rail_color:              RGBA((0, 0, 0, 0)),
+        rail_border_color:       RGBA((0, 0, 0, 0)),
+        rail_border_width:       0.0,
+        scroller_color:          RGBA((255, 121, 198, 40)),
+        scroller_hovered_color:  RGBA((255, 121, 198, 65)),
+        scroller_dragging_color: RGBA((255, 121, 198, 85)),
+        scroller_border_color:   RGBA((0, 0, 0, 0)),
+        scroller_border_width:   0.0,
     ),
 
-
-    // ─────────────────────────────────────────────────────────────────────────
-    //  SEARCH BAR
-    // ─────────────────────────────────────────────────────────────────────────
     search:
     (
-        placeholder:        "Search...",
-        text_size:          14,
-        input_padding:      10,
-        bottom_margin:      10.0,
+        placeholder:               "Search applications...",
+        text_size:                 15,
+        input_padding:             10,
+        bottom_margin:             8.0,
 
-        background_color:   RGB((68, 71, 90)),
-        border_color:       RGB((255, 121, 198)),
-        border_width:       1.5,
-        border_radius:      (12.0, 12.0, 12.0, 12.0),
+        background_color:          RGB((68, 71, 90)),
+        background_gradient:       None,
+        focused_background_color:  RGB((68, 71, 90)),
+        focused_background_gradient: None,
+        border_color:              RGBA((0, 0, 0, 0)),
+        focused_border_color:      RGB((255, 121, 198)),
+        border_width:              1.5,
+        border_radius:             (12.0, 12.0, 12.0, 12.0),
 
-        text_color:         RGB((248, 248, 242)),
-        placeholder_color:  RGB((98, 114, 164)),
-        selection_color:    RGB((255, 121, 198)),
+        text_color:                RGB((248, 248, 242)),
+        placeholder_color:         RGB((98, 114, 164)),
+        selection_color:           RGBA((255, 121, 198, 45)),
 
-        position:           Right,
-        orientation:        Horizontal,
-        width:              180,
-        height:             0,
-        fixed_x:            None,
-        fixed_y:            None,
+        icon:                      "",
+        icon_color:                RGB((98, 114, 164)),
+
+        font_weight:               Normal,
+        font_style:                Normal,
+        font_family:               "",
+
+        position:                  Bottom,
+        orientation:               Horizontal,
+        width:                     0,
+        height:                    0,
+        fixed_x:                   None,
+        fixed_y:                   None,
     ),
 
-
-    // ─────────────────────────────────────────────────────────────────────────
-    //  RESULT ENTRIES
-    // ─────────────────────────────────────────────────────────────────────────
     entry:
     (
         name_size:              13,
         name_color:             RGB((248, 248, 242)),
+        selected_name_color:    RGB((248, 248, 242)),
+        hovered_name_color:     RGB((248, 248, 242)),
+        name_font_weight:       Normal,
+        name_font_style:        Normal,
+        name_font_family:       "",
+        name_align:             Center,
+        name_max_chars:         28,
 
         comment_size:           10,
         comment_color:          RGB((98, 114, 164)),
-        comment_max_chars:      35,
+        selected_comment_color: RGB((189, 147, 249)),
+        hovered_comment_color:  RGB((98, 114, 164)),
+        comment_font_weight:    Normal,
+        comment_font_style:     Normal,
+        comment_font_family:    "",
+        comment_align:          Center,
+        comment_max_chars:      28,
         show_comment:           false,
+        name_comment_spacing:   2,
 
-        padding:                (10, 8),
+        padding:                (8, 8, 8, 8),
+        label_position:         Below,
+        width:                  0,
+        height:                 0,
 
-        background_color:       RGBA((68, 71, 90, 40)),
-        hovered_color:          RGB((98, 71, 90)),
-        pressed_color:          RGBA((255, 85, 85, 20)),
-        selected_color:         RGBA((255, 121, 198, 15)),
-        selected_hovered_color: RGB((189, 147, 249)),
+        background_color:       RGBA((0, 0, 0, 0)),
+        hovered_color:          RGB((68, 71, 90)),
+        pressed_color:          RGB((40, 42, 54)),
+        selected_color:         RGBA((255, 121, 198, 22)),
+        selected_hovered_color: RGBA((255, 121, 198, 45)),
         text_color:             RGB((248, 248, 242)),
 
-        border_color:           RGBA((68, 71, 90, 60)),
-        selected_border_color:  RGB((80, 250, 123)),
+        border_color:           RGBA((0, 0, 0, 0)),
+        selected_border_color:  RGBA((255, 121, 198, 50)),
+        hovered_border_color:   RGBA((0, 0, 0, 0)),
+        pressed_border_color:   RGBA((0, 0, 0, 0)),
         border_width:           1.0,
         border_radius:          (12.0, 12.0, 12.0, 12.0),
 
-        shadow_color:           RGBA((0, 0, 0, 30)),
-        shadow_offset_x:        0.0,
-        shadow_offset_y:        2.0,
-        shadow_blur:            6.0,
+        shadow_color:               RGBA((0, 0, 0, 0)),
+        shadow_offset_x:            0.0,
+        shadow_offset_y:            0.0,
+        shadow_blur:                0.0,
+        selected_shadow_color:      RGBA((0, 0, 0, 0)),
+        selected_shadow_offset_x:   0.0,
+        selected_shadow_offset_y:   0.0,
+        selected_shadow_blur:       0.0,
+        hovered_shadow_color:       RGBA((0, 0, 0, 0)),
+        hovered_shadow_offset_x:    0.0,
+        hovered_shadow_offset_y:    0.0,
+        hovered_shadow_blur:        0.0,
 
-        width:                  0,
-        height:                 65,
+        wrap_word:                      false,
+        ellipsize_instead_of_wrapping:   true,
+        ellipsis:                       "...",
+
+        show_separator:     false,
+        separator_color:    RGBA((80, 80, 80, 40)),
+        separator_width:    1.0,
     ),
 
-
-    // ─────────────────────────────────────────────────────────────────────────
-    //  ICON BADGE
-    // ─────────────────────────────────────────────────────────────────────────
     icon:
     (
-        show:               true,
-        use_real_icons:     false,
-        width:              34,
-        height:             34,
-        text_size:          17,
-        gap:                8,
+        show:                  true,
+        use_real_icons:        true,
+        width:                 48,
+        height:                48,
+        text_size:             22,
+        gap:                   8,
+        padding:               (0, 0),
+        opacity:               1.0,
+        selected_opacity:      1.0,
+        hovered_opacity:       1.0,
 
-        background_color:   RGB((68, 71, 90)),
-        selected_color:     RGB((255, 121, 198)),
-        icon_color:         RGB((139, 233, 253)),
+        background_color:      RGBA((68, 71, 90, 60)),
+        hovered_color:         RGBA((255, 121, 198, 25)),
+        selected_color:        RGBA((255, 121, 198, 50)),
+        icon_color:            RGB((189, 147, 249)),
+        selected_icon_color:   RGB((255, 255, 255)),
+        hovered_icon_color:    RGB((255, 121, 198)),
 
-        border_color:       RGBA((189, 147, 249, 60)),
-        border_width:       1.0,
-        border_radius:      (10.0, 10.0, 10.0, 10.0),
+        border_color:          RGBA((0, 0, 0, 0)),
+        selected_border_color: RGBA((255, 121, 198, 60)),
+        hovered_border_color:  RGBA((0, 0, 0, 0)),
+        border_width:          1.0,
+        border_radius:         (12.0, 12.0, 12.0, 12.0),
     ),
 
-
-    // ─────────────────────────────────────────────────────────────────────────
-    //  FOOTER
-    // ─────────────────────────────────────────────────────────────────────────
     footer:
     (
-        show:           true,
-        show_hint:      false,
-        hint_text:      "",
-        show_count:     true,
-        text_size:      11,
-        text_color:     RGB((255, 184, 108)),
-        top_margin:     6.0,
-        position:       Bottom,
+        show:             false,
+        show_hint:        false,
+        hint_text:        "",
+        show_count:       false,
+        count_format:     "{shown} / {total} results",
+        single_format:    "{total} result",
+        text_size:        11,
+        text_color:       RGB((98, 114, 164)),
+        hint_color:       RGB((98, 114, 164)),
+        count_color:      RGB((255, 121, 198)),
+        font_weight:      Normal,
+        font_style:       Normal,
+        top_margin:       6.0,
+        padding:          (0, 0, 0, 0),
+        background_color: RGBA((0, 0, 0, 0)),
+        border_color:     RGBA((0, 0, 0, 0)),
+        border_width:     0.0,
+        border_radius:    (0.0, 0.0, 0.0, 0.0),
+        position:         Bottom,
         text_orientation: Horizontal,
-        width:          0,
-        height:         0,
+        width:            0,
+        height:           0,
     ),
 
-
-    // ─────────────────────────────────────────────────────────────────────────
-    //  SEARCH BEHAVIOUR
-    // ─────────────────────────────────────────────────────────────────────────
     behaviour:
     (
         search_name:        true,
@@ -197,6 +232,20 @@ LauncherConfig
         calc_enabled:           true,
         copy_feedback_text:     "Copied!",
         copy_feedback_seconds:  2.0,
+        min_query_length:       0,
+        show_on_empty_query:    true,
+        max_empty_results:      0,
+    ),
+
+    keybinds:
+    (
+        close:              ["Escape"],
+        select_up:          ["ArrowUp"],
+        select_down:        ["ArrowDown"],
+        select_left:        ["ArrowLeft"],
+        select_right:       ["ArrowRight", "Tab"],
+        launch_alt_prefix:  "Alt",
+        relaunch_key:       "l",
     ),
 
     background_images: [],

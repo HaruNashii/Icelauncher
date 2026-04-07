@@ -6,6 +6,7 @@ use iced::{Alignment, Color, Element, Length, Padding, widget::{text::Wrapping, 
 
 
 // ============ CRATES ============
+use crate::helpers::color::color_or_gradient;
 use crate::
 {
     AppData, 
@@ -22,12 +23,6 @@ use crate::
         widget::{corner_radius, horizontal_align, make_font_family},
     }, 
 };
-
-
-
-
-// ============ STATIC'S/CONST'S ============
-const FRECENCY_BADGE_THRESHOLD: usize = 3;
 
 
 
@@ -183,7 +178,18 @@ fn build_icon_element<'a>(app: &'a AppData, entry: &'a AppEntry, is_selected: bo
     }
 
     let radius       = icon_config.border_radius;
-    let background   = if is_selected { icon_config.selected_color.to_iced()        } else if is_hovered { icon_config.hovered_color.to_iced()        } else { icon_config.background_color.to_iced()  };
+    let (bg_color, bg_gradient) = if is_selected
+    {
+        (icon_config.selected_color,    icon_config.selected_gradient.as_ref())
+    }
+    else if is_hovered
+    {
+        (icon_config.hovered_color,     icon_config.hovered_gradient.as_ref())
+    }
+    else
+    {
+        (icon_config.background_color,  icon_config.background_gradient.as_ref())
+    };
     let border_color = if is_selected { icon_config.selected_border_color.to_iced() } else if is_hovered { icon_config.hovered_border_color.to_iced() } else { icon_config.border_color.to_iced()       };
     let icon_color   = if is_selected { icon_config.selected_icon_color.to_iced()   } else if is_hovered { icon_config.hovered_icon_color.to_iced()   } else { icon_config.icon_color.to_iced()         };
     let opacity      = if is_selected { icon_config.selected_opacity                } else if is_hovered { icon_config.hovered_opacity                } else { icon_config.opacity                      };
@@ -218,7 +224,7 @@ fn build_icon_element<'a>(app: &'a AppData, entry: &'a AppEntry, is_selected: bo
         .align_y(Alignment::Center)
         .style(move |_| container::Style 
         {
-            background: Some(iced::Background::Color(background)),
+            background: Some(color_or_gradient(bg_gradient, bg_color)),
             border: Border { color: border_color, width: border_width, radius: corner_radius(radius) },
             ..Default::default()
         })
@@ -279,23 +285,23 @@ fn build_label_element<'a>(app: &'a AppData, entry: &'a AppEntry, is_selected: b
 
     let comment_element: Element<Message> = if entry_config.show_comment && !entry.comment.is_empty() 
     {
-            iced::widget::text(comment_text)
-                .size(entry_config.comment_size)
-                .color(comment_color)
-                .font(comment_font)
-                .align_x(horizontal_align(&entry_config.comment_align))
-                .wrapping(wrapping)
-                .into()
+        iced::widget::text(comment_text)
+            .size(entry_config.comment_size)
+            .color(comment_color)
+            .font(comment_font)
+            .align_x(horizontal_align(&entry_config.comment_align))
+            .wrapping(wrapping)
+            .into()
     } 
     else 
     {
-        Space::new().into()
+        Space::new().height(0).into()
     };
 
-    container(column![name_element, comment_element].spacing(entry_config.name_comment_spacing as u32))
-    .width(Length::Fill)
-    .clip(true)
-    .into()
+    column![name_element, comment_element]
+        .spacing(entry_config.name_comment_spacing as u32)
+        .width(Length::Fill)
+        .into()
 }
 
 
@@ -303,20 +309,21 @@ fn build_label_element<'a>(app: &'a AppData, entry: &'a AppEntry, is_selected: b
 fn build_badge_elements<'a>(app: &'a AppData, index: usize, entry: &'a AppEntry, is_calc: bool) -> EntryBadges<'a>
 {
     let comment_size = app.config.entry.comment_size;
-    let frecency_badge = if !is_calc && app.frecency.launch_count(&entry.exec) >= FRECENCY_BADGE_THRESHOLD 
+    let frecency_badge = if !is_calc && app.config.entry.show_hot_apps && app.frecency.launch_count(&entry.exec) >= app.config.entry.hot_apps_threshold
     {
-        let badge_color = Color { r: 1.0, g: 0.55, b: 0.1, a: 0.85 };
-        Some(iced::widget::text("🔥").size(comment_size).color(badge_color).into())
+        let badge_color = app.config.entry.hot_apps_color.to_iced();
+        Some(iced::widget::text(&app.config.entry.hot_apps_icon).size(comment_size).color(badge_color).into())
     } 
     else 
     {
         None
     };
 
-    let shortcut_badge = if index < 9 
+    let shortcut_badge = if app.config.entry.show_shortcut_hint && index < 9
     {
         let hint_color = Color { r: 0.5, g: 0.5, b: 0.5, a: 0.6 };
-        Some(iced::widget::text(format!("Alt+{}", index + 1)).size(comment_size.saturating_sub(1)).color(hint_color).into())
+        let prefix = &app.config.keybinds.launch_alt_prefix;
+        Some(iced::widget::text(format!("{}+{}", prefix, index + 1)).size(comment_size.saturating_sub(1)).color(hint_color).into())
     } 
     else 
     {
@@ -333,14 +340,17 @@ fn arrange_entry_content<'a>(app: &'a AppData, is_selected: bool, is_calc: bool,
     let icon_config  = &app.config.icon;
     let entry_config = &app.config.entry;
     let gap          = if icon_config.show { icon_config.gap } else { 0 };
-    let gap_h: Element<Message> = container(Space::new()).width(gap).into();
-    let gap_v: Element<Message> = container(Space::new()).height(gap).into();
 
     match entry_config.label_position 
     {
-        LabelPosition::Right => arrange_label_right(app, is_selected, is_calc, icon, label, badges, gap_h),
+        LabelPosition::Right => arrange_label_right(app, is_selected, is_calc, icon, label, badges, gap),
 
-        LabelPosition::Left => row![label, gap_h, icon].align_y(Alignment::Center).into(),
+        LabelPosition::Left =>
+        {
+            row![label, Space::new().width(gap), icon]
+                .align_y(Alignment::Center)
+                .into()
+        }
 
         LabelPosition::Below => 
         {
@@ -349,9 +359,12 @@ fn arrange_entry_content<'a>(app: &'a AppData, is_selected: bool, is_calc: bool,
                     container(icon)
                         .align_x(Alignment::Center)
                         .width(Length::Fill),
-                    gap_v,
-                    label
+                    Space::new().height(gap),
+                    container(label)
+                        .align_x(Alignment::Center)
+                        .width(Length::Fill),
                 ]
+                .width(Length::Fill)
                 .align_x(Alignment::Center)
                 .into()
         }
@@ -359,12 +372,15 @@ fn arrange_entry_content<'a>(app: &'a AppData, is_selected: bool, is_calc: bool,
         {
             column!
                 [
-                    label,
-                    gap_v,
+                    container(label)
+                        .align_x(Alignment::Center)
+                        .width(Length::Fill),
+                    Space::new().height(gap),
                     container(icon)
                         .align_x(Alignment::Center)
-                        .width(Length::Fill)
+                        .width(Length::Fill),
                 ]
+                .width(Length::Fill)
                 .align_x(Alignment::Center)
                 .into()
         }
@@ -373,7 +389,7 @@ fn arrange_entry_content<'a>(app: &'a AppData, is_selected: bool, is_calc: bool,
 
 
 
-fn arrange_label_right<'a>(app: &'a AppData, is_selected: bool, is_calc: bool, icon: Element<'a, Message>, label: Element<'a, Message>, badges: EntryBadges<'a>, gap: Element<'a, Message>) -> Element<'a, Message> 
+fn arrange_label_right<'a>(app: &'a AppData, is_selected: bool, is_calc: bool, icon: Element<'a, Message>, label: Element<'a, Message>, badges: EntryBadges<'a>, gap: u32) -> Element<'a, Message> 
 {
     if is_calc && is_selected && app.copy_feedback 
     {
@@ -384,7 +400,7 @@ fn arrange_label_right<'a>(app: &'a AppData, is_selected: bool, is_calc: bool, i
 
     if right_badges.is_empty() 
     {
-        row![icon, gap, label]
+        row![icon, Space::new().width(gap), label]
             .align_y(Alignment::Center)
             .into()
     }
@@ -394,7 +410,7 @@ fn arrange_label_right<'a>(app: &'a AppData, is_selected: bool, is_calc: bool, i
             .padding(Padding { top: 0.0, right: 6.0, bottom: 0.0, left: 4.0 })
             .into();
 
-        row![icon, gap, label, Space::new().width(Length::Fill), badge_row]
+        row![icon, Space::new().width(gap), label, Space::new().width(Length::Fill), badge_row]
             .align_y(Alignment::Center)
             .into()
     }
@@ -402,7 +418,7 @@ fn arrange_label_right<'a>(app: &'a AppData, is_selected: bool, is_calc: bool, i
 
 
 
-fn build_calc_copy_feedback<'a>(app: &'a AppData, icon: Element<'a, Message>, label: Element<'a, Message>, gap: Element<'a, Message>) -> Element<'a, Message>
+fn build_calc_copy_feedback<'a>(app: &'a AppData, icon: Element<'a, Message>, label: Element<'a, Message>, gap: u32) -> Element<'a, Message>
 {
     let feedback_text = if app.wl_copy_available 
     {
@@ -418,7 +434,7 @@ fn build_calc_copy_feedback<'a>(app: &'a AppData, icon: Element<'a, Message>, la
         .color(app.config.search.border_color.to_iced())
         .into();
 
-    row![icon, gap, label, Space::new().width(Length::Fill), feedback]
+    row![icon, Space::new().width(gap), label, Space::new().width(Length::Fill), feedback]
         .align_y(Alignment::Center)
         .into()
 }
@@ -450,6 +466,7 @@ fn arrange_into_grid<'a>(app: &'a AppData, buttons: Vec<Element<'a, Message>>) -
 {
     let window_config = &app.config.window;
     let entry_config  = &app.config.entry;
+    let icon_config   = &app.config.icon;
     let cols          = window_config.grid_side_items.max(1);
     let max           = app.filtered.len().min(window_config.max_results);
     let col_spacing   = window_config.grid_column_spacing as f32;
@@ -462,12 +479,12 @@ fn arrange_into_grid<'a>(app: &'a AppData, buttons: Vec<Element<'a, Message>>) -
         let row_end   = (row_start + cols).min(max);
         let row_slice = &app.filtered[row_start .. row_end];
         let row_has_comment = row_slice.iter().any(|e| entry_config.show_comment && !e.comment.is_empty());
-        let cell_height     = row_height(entry_config, row_has_comment);
+        let cell_height     = row_height(entry_config, icon_config, row_has_comment);
 
         let mut cells: Vec<Element<Message>> = button_iter
             .by_ref()
             .take(cols)
-            .map(|cell| container(cell).width(Length::Fill).height(cell_height).into())
+            .map(|cell| container(cell).clip(true).width(Length::Fill).height(cell_height).into())
             .collect();
 
         if cells.is_empty() 

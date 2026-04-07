@@ -6,6 +6,7 @@ fn entry(name: &str) -> AppEntry
 {
     AppEntry {
         name: name.to_string(),
+        generic_name: String::new(),
         exec: name.to_string(),
         comment: String::new(),
         icon: String::new(),
@@ -13,6 +14,7 @@ fn entry(name: &str) -> AppEntry
         keywords: vec![],
         terminal: false,
         name_lc: String::new(),
+        generic_name_lc: String::new(),
         exec_lc: String::new(),
         comment_lc: String::new(),
         keywords_lc: Vec::new(),
@@ -82,6 +84,9 @@ fn query_changed_filters_entries()
     assert_eq!(app.filtered.len(), 2);
     assert_eq!(app.selected, 0);
     assert_eq!(app.scroll_offset, 0.0);
+    // viewport_h and content_h are preserved across queries (not zeroed),
+    // so they remain at their initial default of 0.0 here since we never
+    // sent a Scrolled event in this test.
     assert_eq!(app.viewport_h, 0.0);
     assert_eq!(app.content_h, 0.0);
 }
@@ -108,8 +113,11 @@ fn query_changed_resets_scroll_state()
     let _ = update(&mut app, Message::QueryChanged("a".to_string()));
 
     assert_eq!(app.scroll_offset, 0.0);
-    assert_eq!(app.viewport_h, 0.0);
-    assert_eq!(app.content_h, 0.0);
+    // viewport_h and content_h are intentionally preserved across queries:
+    // zeroing them breaks arrow-key scrolling after a search because
+    // scroll_to_selected bails out when these are 0.
+    assert_eq!(app.viewport_h, 300.0);
+    assert_eq!(app.content_h, 900.0);
 }
 
 // ── Scrolled ─────────────────────────────────────────────────────────────────

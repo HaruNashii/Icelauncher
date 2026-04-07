@@ -11,6 +11,7 @@ pub fn entry(name: &str) -> AppEntry
 {
     AppEntry {
         name: name.to_string(),
+        generic_name: String::new(),
         exec: name.to_string(),
         comment: String::new(),
         icon: String::new(),
@@ -18,6 +19,7 @@ pub fn entry(name: &str) -> AppEntry
         keywords: vec![],
         terminal: false,
         name_lc: String::new(),
+        generic_name_lc: String::new(),
         exec_lc: String::new(),
         comment_lc: String::new(),
         keywords_lc: Vec::new(),
@@ -230,6 +232,7 @@ fn plain_entry(name: &str) -> AppEntry
 {
     AppEntry {
         name: name.to_string(),
+        generic_name: String::new(),
         exec: name.to_string(),
         comment: String::new(),
         icon: String::new(),
@@ -237,6 +240,7 @@ fn plain_entry(name: &str) -> AppEntry
         keywords: vec![],
         terminal: false,
         name_lc: String::new(),
+        generic_name_lc: String::new(),
         exec_lc: String::new(),
     comment_lc: String::new(),
     keywords_lc: Vec::new(),

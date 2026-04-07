@@ -9,6 +9,7 @@ use iced::{Alignment, Color, Element, Length, Padding, border::Radius, widget::{
 use crate::
 {
     AppData, Message,
+    helpers::color::color_or_gradient,
     helpers::widget::{corner_radius, make_font_family, optional_length, optional_length_shrink},
     ron::{SearchOrientation, SearchPosition},
 };
@@ -29,11 +30,11 @@ pub fn build_search_bar(app: &AppData) -> Element<'_, Message>
 
     let background = if is_focused 
     {
-        search_config.focused_background_color.to_iced()
+        color_or_gradient(search_config.focused_background_gradient.as_ref(), search_config.focused_background_color)
     } 
     else 
     {
-        search_config.background_color.to_iced()
+        color_or_gradient(search_config.background_gradient.as_ref(), search_config.background_color)
     };
     let border_color = if is_focused 
     {
@@ -64,19 +65,21 @@ pub fn build_search_bar(app: &AppData) -> Element<'_, Message>
         .size(search_config.text_size)
         .padding(search_config.input_padding as f32)
         .font(font)
-        .style(move |_theme, _status| iced::widget::text_input::Style 
-        {
-            background: iced::Background::Color(background),
-            icon: search_config.placeholder_color.to_iced(),
-            placeholder: search_config.placeholder_color.to_iced(),
-            value: search_config.text_color.to_iced(),
-            selection: search_config.selection_color.to_iced(),
-            border: Border 
+        .style({
+            move |_theme, _status| iced::widget::text_input::Style 
             {
-                color: border_color,
-                width: search_config.border_width,
-                radius: corner_radius(radius),
-            },
+                background,
+                icon: search_config.placeholder_color.to_iced(),
+                placeholder: search_config.placeholder_color.to_iced(),
+                value: search_config.text_color.to_iced(),
+                selection: search_config.selection_color.to_iced(),
+                border: Border 
+                {
+                    color: border_color,
+                    width: search_config.border_width,
+                    radius: corner_radius(radius),
+                },
+            }
         });
 
     let search_config = &app.config.search;
@@ -122,7 +125,7 @@ fn resolve_submit_message(app: &AppData) -> Message
 
 
 
-fn build_vertical_search<'a>(app: &'a AppData, background: iced::Color, border_color: iced::Color, submit_msg: Message) -> Element<'a, Message>
+fn build_vertical_search<'a>(app: &'a AppData, background: iced::Background, border_color: iced::Color, submit_msg: Message) -> Element<'a, Message>
 {
     let search_config = &app.config.search;
     let font          = make_font_family(&search_config.font_weight, &search_config.font_style, &search_config.font_family);
@@ -186,7 +189,7 @@ fn build_vertical_search<'a>(app: &'a AppData, background: iced::Color, border_c
         .height(Length::Fill)
         .style(move |_| container::Style 
         {
-            background: Some(iced::Background::Color(background)),
+            background: Some(background),
             border: Border 
             {
                 color: border_color,
@@ -200,7 +203,7 @@ fn build_vertical_search<'a>(app: &'a AppData, background: iced::Color, border_c
 
 
 
-fn build_horizontal_search_with_icon<'a>(app: &'a AppData, input: iced::widget::TextInput<'a, Message>, background: iced::Color, border_color: iced::Color) -> Element<'a, Message>
+fn build_horizontal_search_with_icon<'a>(app: &'a AppData, input: iced::widget::TextInput<'a, Message>, background: iced::Background, border_color: iced::Color) -> Element<'a, Message>
 {
     let search_config  = &app.config.search;
     let radius         = search_config.border_radius;
@@ -229,7 +232,7 @@ fn build_horizontal_search_with_icon<'a>(app: &'a AppData, input: iced::widget::
     .height(bar_h)
     .style(move |_| container::Style 
     {
-        background: Some(iced::Background::Color(background)),
+        background: Some(background),
         border: Border 
         {
             color: border_color,

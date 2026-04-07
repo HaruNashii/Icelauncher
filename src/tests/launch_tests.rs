@@ -10,6 +10,7 @@ fn entry(name: &str, exec: &str, comment: &str, keywords: &[&str]) -> AppEntry
 {
     AppEntry {
         name: name.to_string(),
+        generic_name: String::new(),
         exec: exec.to_string(),
         comment: comment.to_string(),
         icon: String::new(),
@@ -17,6 +18,7 @@ fn entry(name: &str, exec: &str, comment: &str, keywords: &[&str]) -> AppEntry
         keywords: keywords.iter().map(|s| s.to_string()).collect(),
         terminal: false,
         name_lc: String::new(),
+        generic_name_lc: String::new(),
         exec_lc: String::new(),
         comment_lc: String::new(),
         keywords_lc: Vec::new(),

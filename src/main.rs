@@ -1,7 +1,7 @@
 // ============ IMPORTS ============
 use iced_layershell::application;
 use iced_layershell::reexport::{Anchor, KeyboardInteractivity, Layer};
-use iced_layershell::settings::{LayerShellSettings, Settings};
+use iced_layershell::settings::{LayerShellSettings, Settings, StartMode};
 use iced_layershell::to_layer_message;
 
 
@@ -9,6 +9,7 @@ use iced_layershell::to_layer_message;
 
 // ============ CRATES ============
 use crate::helpers::frecency::FrecencyStore;
+use crate::helpers::monitor::get_monitor_res;
 use crate::helpers::style::global_style;
 use crate::ron::{LauncherConfig, WindowAnchor, load_config};
 use crate::subscription::subscription;
@@ -34,6 +35,7 @@ mod view;
 pub struct AppEntry
 {
 	pub name: String,
+	pub generic_name: String,
 	pub exec: String,
 	pub comment: String,
 	pub icon: String,
@@ -41,6 +43,7 @@ pub struct AppEntry
 	pub keywords: Vec<String>,
 	pub terminal: bool,
 	pub name_lc: String,
+	pub generic_name_lc: String,
 	pub exec_lc: String,
 	pub comment_lc: String,
 	pub keywords_lc: Vec<String>,
@@ -63,13 +66,9 @@ pub struct AppData
 	pub frecency: FrecencyStore,
 	pub last_launched: Option<String>,
 	pub wl_copy_available: bool,
-	/// Index of the entry currently under the mouse cursor (None = no hover).
 	pub hovered: Option<usize>,
-	/// When true, the launcher was started with --shell/-s and shows
-	/// shell commands instead of .desktop applications.
 	pub shell_mode: bool,
-	/// Position in shell history while cycling with ArrowUp (None = not cycling).
-	pub shell_history_index: Option<usize>,
+
 }
 
 #[to_layer_message]
@@ -92,14 +91,9 @@ pub enum Message
 	LaunchNth(usize),
 	RelaunchLast,
 	Close,
-	/// Mouse entered an entry card at the given visible index.
 	HoverEntry(usize),
-	/// Mouse left all entry cards.
 	HoverClear,
-	/// In shell mode: cycle query backward through frecency history.
-	ShellHistoryUp,
-	/// In shell mode: cycle query forward through frecency history.
-	ShellHistoryDown,
+
 	Nothing,
 }
 
@@ -111,10 +105,11 @@ impl AppEntry
 {
 	pub fn with_normalized(mut self) -> Self
 	{
-		self.name_lc     = self.name.to_lowercase();
-		self.exec_lc     = self.exec.to_lowercase();
-		self.comment_lc  = self.comment.to_lowercase();
-		self.keywords_lc = self.keywords.iter().map(|k| k.to_lowercase()).collect();
+		self.name_lc         = self.name.to_lowercase();
+		self.generic_name_lc = self.generic_name.to_lowercase();
+		self.exec_lc         = self.exec.to_lowercase();
+		self.comment_lc      = self.comment.to_lowercase();
+		self.keywords_lc     = self.keywords.iter().map(|k| k.to_lowercase()).collect();
 		self
 	}
 }
@@ -145,21 +140,61 @@ pub fn main() -> Result<(), iced_layershell::Error>
 		return Ok(());
 	}
 
-	let shell_mode = args.iter().any(|a| a == "--shell" || a == "-s");
-	let config          = load_config();
-	let window_width    = config.window.width;
-	let window_height   = config.window.height;
-	let frecency        = FrecencyStore::load();
-	let wl_copy_available = which::which("wl-copy").is_ok();
-	let anchor          = anchor_from_config(&config.window.anchor);
-	let margins         = (
+	let shell_mode                = args.iter().any(|a| a == "--shell" || a == "-s");
+	let mut config          = load_config();
+	let window_width               = config.window.width;
+	let window_height              = config.window.height;
+	let frecency         = FrecencyStore::load();
+	let wl_copy_available         = which::which("wl-copy").is_ok();
+	let anchor                  = anchor_from_config(&config.window.anchor);
+        let display         = config.window.display.clone();
+	let margins   = 
+        (
 		config.window.margin_top    as i32,
 		config.window.margin_right  as i32,
 		config.window.margin_bottom as i32,
 		config.window.margin_left   as i32,
 	);
 
-	let initial_state = AppData {
+        let start_mode = match &display
+        { 
+            Some(output) => StartMode::TargetScreen(output.to_string()),
+            None => StartMode::Active 
+        };
+
+        let (mw, mh) = get_monitor_res(display);
+        let n_window_size = match (window_width, window_height)
+        {
+            (0, 0) => 
+            {
+                println!("both dimensions are 0");
+                Some((mw, mh))
+            }
+            (0, h) => 
+            {
+                println!("window width is 0");
+                Some((mw, h))
+            }
+            (w, 0) => 
+            {
+                println!("window height is 0");
+                Some((w, mh))
+            }
+            (w, h) => 
+            {
+                println!("window size is normal");
+                Some((w, h))
+            }
+        };
+
+        if let Some(window_size) = n_window_size
+        {
+            config.window.width = window_size.0;
+            config.window.height = window_size.1;
+        };
+
+	let initial_state = AppData 
+        {
 		loading: true,
 		config,
 		frecency,
@@ -170,11 +205,12 @@ pub fn main() -> Result<(), iced_layershell::Error>
 
 	let layer_settings = LayerShellSettings
 	{
-		size:                   Some((window_width, window_height)),
+		size:                   n_window_size,
 		anchor,
 		layer:                  Layer::Overlay,
 		keyboard_interactivity: KeyboardInteractivity::Exclusive,
 		margin:                 margins,
+                start_mode,
 		..Default::default()
 	};
 	let settings = Settings { layer_settings, ..Default::default() };
