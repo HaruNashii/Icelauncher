@@ -281,7 +281,8 @@ fn build_label_element<'a>(app: &'a AppData, entry: &'a AppEntry, is_selected: b
         .color(name_color)
         .font(name_font)
         .align_x(horizontal_align(&entry_config.name_align))
-        .wrapping(wrapping);
+        .wrapping(wrapping)
+        .width(Length::Fill);
 
     let comment_element: Element<Message> = if entry_config.show_comment && !entry.comment.is_empty() 
     {
@@ -291,6 +292,7 @@ fn build_label_element<'a>(app: &'a AppData, entry: &'a AppEntry, is_selected: b
             .font(comment_font)
             .align_x(horizontal_align(&entry_config.comment_align))
             .wrapping(wrapping)
+            .width(Length::Fill)
             .into()
     } 
     else 
