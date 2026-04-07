@@ -38,13 +38,11 @@ pub fn subscription(app: &AppData) -> iced::Subscription<Message>
 
 pub fn handle_key_pressed(key: Key, modifiers: Modifiers, keybinds: &crate::ron::KeybindConfig) -> Option<Message>
 {
-	// Track modifier-key press
 	if is_named_key(&key, &keybinds.launch_alt_prefix)
 	{
 		return Some(Message::AltPressed(true));
 	}
 
-	// Modifier-held shortcuts
 	if modifier_active(modifiers, &keybinds.launch_alt_prefix)
 	{
 		return handle_alt_shortcut(key, keybinds);
@@ -68,15 +66,11 @@ fn handle_alt_shortcut(key: Key, keybinds: &crate::ron::KeybindConfig) -> Option
 {
 	let Key::Character(c) = key else { return None };
 
-	// Alt+1-9 quick-launch: only consume the key if it IS a digit in 1..=9.
-	// Do not use `?` here — a non-digit key must fall through to the relaunch
-	// check below, not cause an early None return.
 	if let Some(digit) = c.chars().next().and_then(|ch| ch.to_digit(10)) && (1..=9).contains(&digit)
 	{
 		return Some(Message::LaunchNth((digit - 1) as usize));
 	}
 
-	// Configurable relaunch key (default "l")
 	let ch = c.chars().next()?.to_lowercase().to_string();
 	let rk = keybinds.relaunch_key.to_lowercase();
 	if ch == rk
@@ -122,7 +116,6 @@ fn key_to_string(key: &Key) -> String
 }
 
 
-/// Return true if `name` matches the modifier label in the keybind config (e.g. "Alt").
 fn modifier_active(modifiers: Modifiers, name: &str) -> bool
 {
 	match name.to_lowercase().as_str()
@@ -136,7 +129,6 @@ fn modifier_active(modifiers: Modifiers, name: &str) -> bool
 }
 
 
-/// Return true if `key` is the named modifier key itself (so we can track its press/release).
 fn is_named_key(key: &Key, name: &str) -> bool
 {
 	match name.to_lowercase().as_str()

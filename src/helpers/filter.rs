@@ -29,12 +29,7 @@ struct ScoredEntry
 
 
 // ============ FUNCTIONS ============
-pub fn filter_entries(
-	entries: &[AppEntry],
-	query: &str,
-	config: &LauncherConfig,
-	frecency: &FrecencyStore,
-) -> Vec<AppEntry>
+pub fn filter_entries(entries: &[AppEntry], query: &str, config: &LauncherConfig, frecency: &FrecencyStore) -> Vec<AppEntry>
 {
 	let behaviour = &config.behaviour;
 
@@ -84,7 +79,8 @@ fn sort_by_frecency(entries: &[AppEntry], frecency: &FrecencyStore) -> Vec<AppEn
 {
 	let scores = frecency.score_snapshot();
 	let mut indices: Vec<usize> = (0..entries.len()).collect();
-	indices.sort_unstable_by(|&a, &b| {
+	indices.sort_unstable_by(|&a, &b| 
+        {
 		let sa = scores.get(entries[a].exec.as_str()).copied().unwrap_or(0.0);
 		let sb = scores.get(entries[b].exec.as_str()).copied().unwrap_or(0.0);
 		sb.partial_cmp(&sa)
@@ -95,16 +91,14 @@ fn sort_by_frecency(entries: &[AppEntry], frecency: &FrecencyStore) -> Vec<AppEn
 }
 
 
-fn score_and_sort(
-	entries: &[AppEntry],
-	query: &str,
-	config: &LauncherConfig,
-	frecency: &FrecencyStore,
-) -> Vec<AppEntry>
+fn score_and_sort(entries: &[AppEntry], query: &str, config: &LauncherConfig, frecency: &FrecencyStore) -> Vec<AppEntry>
 {
-	let normalized_query = if config.behaviour.case_sensitive {
+	let normalized_query = if config.behaviour.case_sensitive 
+        {
 		query.to_string()
-	} else {
+	} 
+        else 
+        {
 		query.to_lowercase()
 	};
 
@@ -114,13 +108,15 @@ fn score_and_sort(
 	let mut scored: Vec<ScoredEntry> = entries
 		.par_iter()
 		.enumerate()
-		.filter_map(|(i, entry)| {
+		.filter_map(|(i, entry)| 
+                {
 			let frec = scores.get(entry.exec.as_str()).copied().unwrap_or(0.0);
 			score_entry(i, entry, &normalized_query, &finder, config, frec)
 		})
 		.collect();
 
-	scored.sort_unstable_by(|a, b| {
+	scored.sort_unstable_by(|a, b| 
+        {
 		a.exact_tier
 			.cmp(&b.exact_tier)
 			.then_with(|| b.fuzzy.cmp(&a.fuzzy))
@@ -140,27 +136,26 @@ fn simd_contains(finder: &memmem::Finder, haystack: &str) -> bool
 
 
 #[inline]
-fn score_entry(
-	index: usize,
-	entry: &AppEntry,
-	normalized_query: &str,
-	finder: &memmem::Finder,
-	config: &LauncherConfig,
-	frecency: f64,
-) -> Option<ScoredEntry>
+fn score_entry(index: usize, entry: &AppEntry, normalized_query: &str, finder: &memmem::Finder, config: &LauncherConfig, frecency: f64) -> Option<ScoredEntry>
 {
 	let behaviour = &config.behaviour;
-
 	let name    = if behaviour.case_sensitive { entry.name.as_str()    } else { &entry.name_lc    };
 	let comment = if behaviour.case_sensitive { entry.comment.as_str() } else { &entry.comment_lc };
-	let exec    = if behaviour.search_exec {
+	let exec    = if behaviour.search_exec 
+        {
 		if behaviour.case_sensitive { entry.exec.as_str() } else { &entry.exec_lc }
-	} else {
+	} 
+        else 
+        {
 		""
 	};
-	let keywords: &[String] = if behaviour.case_sensitive {
+
+	let keywords: &[String] = if behaviour.case_sensitive 
+        {
 		&entry.keywords
-	} else {
+	} 
+        else 
+        {
 		&entry.keywords_lc
 	};
 
@@ -168,31 +163,39 @@ fn score_entry(
 	let comment_exact = behaviour.search_comment  && simd_contains(finder, comment);
 	let exec_exact    = behaviour.search_exec     && simd_contains(finder, exec);
 	let keyword_exact = behaviour.search_keywords && keywords.iter().any(|k| simd_contains(finder, k));
-
 	let any_exact = name_exact || comment_exact || exec_exact || keyword_exact;
-
 	let name_fuzzy = if behaviour.search_name { fuzzy_score(normalized_query, name) } else { 0 };
 
-	let best_fuzzy = if any_exact {
+	let best_fuzzy = if any_exact 
+        {
 		name_fuzzy
-	} else {
+	} 
+        else 
+        {
 		let comment_fuzzy = if behaviour.search_comment { fuzzy_score(normalized_query, comment) } else { 0 };
 		let exec_fuzzy    = if behaviour.search_exec    { fuzzy_score(normalized_query, exec)    } else { 0 };
-		let keyword_fuzzy = if behaviour.search_keywords {
+		let keyword_fuzzy = if behaviour.search_keywords 
+                {
 			keywords.iter().map(|k| fuzzy_score(normalized_query, k)).max().unwrap_or(0)
-		} else {
+		} 
+                else 
+                {
 			0
 		};
 		name_fuzzy.max(comment_fuzzy).max(exec_fuzzy).max(keyword_fuzzy)
 	};
 
-	if !any_exact && best_fuzzy == 0 {
+	if !any_exact && best_fuzzy == 0 
+        {
 		return None;
 	}
 
-	let exact_tier = if any_exact {
+	let exact_tier = if any_exact 
+        {
 		classify_exact_tier(name, normalized_query, name_exact, keyword_exact, exec_exact, comment_exact)
-	} else {
+	}
+        else 
+        {
 		6
 	};
 

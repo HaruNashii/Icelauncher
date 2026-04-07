@@ -3,7 +3,6 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
-
 use serde::{Deserialize, Serialize};
 
 
@@ -13,7 +12,7 @@ use serde::{Deserialize, Serialize};
 const MAX_LAUNCHES_PER_APP: usize = 50;
 const FRECENCY_STORE_PATH: &str   = ".cache/icelauncher/frecency.json";
 /// Launches older than this many days are dropped from each app's history.
-const MAX_LAUNCH_AGE_DAYS: u64    = 90;
+const MAX_LAUNCH_AGE_DAYS: u64    = 30;
 /// Apps with zero surviving launches after pruning are removed entirely.
 /// Also caps total number of tracked apps to this limit (lowest-scored removed first).
 const MAX_TRACKED_APPS: usize     = 500;
@@ -76,21 +75,16 @@ impl FrecencyStore
 	pub fn save(&self)
 	{
 		let path = store_path();
-		if let Some(parent) = path.parent() {
+		if let Some(parent) = path.parent() 
+                {
 			let _ = fs::create_dir_all(parent);
 		}
-		if let Ok(json) = serde_json::to_string_pretty(self) {
+		if let Ok(json) = serde_json::to_string_pretty(self) 
+                {
 			let _ = fs::write(&path, json);
 		}
 	}
 
-	/// Record a launch in memory AND immediately persist to disk.
-	///
-	/// Prefer `record_in_memory` + a background `save` (as done in
-	/// `record_and_launch`) for non-blocking paths.  This method exists for
-	/// call-sites that need a synchronous, single-step record+save; it calls
-	/// `record_in_memory` exactly once before saving so no launch is
-	/// double-counted.
 	pub fn save_record(&mut self, exec: &str)
 	{
 		self.record_in_memory(exec);
@@ -127,11 +121,6 @@ impl FrecencyStore
 		scored.into_iter().take(n).map(|(k, _)| k.clone()).collect()
 	}
 
-	/// Remove stale launch timestamps and evict low-value / excess app entries.
-	///
-	/// - Any individual launch timestamp older than `MAX_LAUNCH_AGE_DAYS` is dropped.
-	/// - Apps left with zero launches are removed entirely.
-	/// - If more than `MAX_TRACKED_APPS` apps remain, the lowest-scored ones are evicted.
 	pub fn prune(&mut self)
 	{
 		let cutoff_secs = now_secs().saturating_sub(MAX_LAUNCH_AGE_DAYS * 86_400);
@@ -142,10 +131,8 @@ impl FrecencyStore
 			record.launches.retain(|&t| t >= cutoff_secs);
 		}
 
-		// Remove apps with no remaining launches.
 		self.apps.retain(|_, record| !record.launches.is_empty());
 
-		// If still over the cap, evict the lowest-scored apps.
 		if self.apps.len() > MAX_TRACKED_APPS
 		{
 			let now = now_secs();
@@ -153,7 +140,6 @@ impl FrecencyStore
 				.iter()
 				.map(|(k, v)| (k.clone(), v.score_at(now)))
 				.collect();
-			// Sort ascending by score — weakest first.
 			scored.sort_unstable_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal));
 			let to_remove = scored.len() - MAX_TRACKED_APPS;
 			for (key, _) in scored.into_iter().take(to_remove)

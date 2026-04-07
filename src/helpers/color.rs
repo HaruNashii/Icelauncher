@@ -5,10 +5,6 @@ use serde::{Deserialize, Serialize};
 
 
 // ============ ENUM/STRUCT, ETC ============
-
-/// A linear gradient: `(angle_degrees, stops)` where each stop is
-/// `(position_0_to_1, color)`.  Matches the format used in icebar so
-/// theme files are portable between the two apps.
 #[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
 pub enum Gradient
 {
@@ -111,9 +107,6 @@ pub fn hex_to_iced(bytes: &[u8; 9]) -> Option<iced::Color>
 }
 
 
-/// Resolve a gradient-or-color config value into an iced `Background`.
-/// When `gradient` is `Some`, the gradient wins; otherwise the flat `color`
-/// is used.  This mirrors `match_color_or_gradient` from icebar's style.rs.
 pub fn color_or_gradient(gradient: Option<&Gradient>, color: ColorType) -> iced::Background
 {
 	use iced_layershell::reexport::core::{Degrees, gradient::Linear};

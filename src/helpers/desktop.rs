@@ -14,13 +14,13 @@ use crate::{AppEntry, Message};
 // ============ FUNCTIONS ============
 pub fn load_apps_stream() -> impl futures::Stream<Item = Message>
 {
-	async_stream::stream! {
-		let entries = tokio::task::spawn_blocking(scan_desktop_files)
-			.await
-			.unwrap_or_else(|e| {
-				eprintln!("[icelauncher] Failed to scan desktop files: {e}");
-				vec![]
-			});
+	async_stream::stream! 
+        {
+		let entries = tokio::task::spawn_blocking(scan_desktop_files).await.unwrap_or_else(|e|
+                {
+		    eprintln!("[icelauncher] Failed to scan desktop files: {e}");
+		    vec![]
+		});
 		yield Message::EntriesLoaded(entries);
 	}
 }
@@ -28,19 +28,18 @@ pub fn load_apps_stream() -> impl futures::Stream<Item = Message>
 
 pub fn load_shell_commands_stream() -> impl futures::Stream<Item = Message>
 {
-	async_stream::stream! {
-		let entries = tokio::task::spawn_blocking(scan_shell_commands)
-			.await
-			.unwrap_or_else(|e| {
-				eprintln!("[icelauncher] Failed to scan shell commands: {e}");
-				vec![]
-			});
+	async_stream::stream! 
+        {
+		let entries = tokio::task::spawn_blocking(scan_shell_commands).await.unwrap_or_else(|e| 
+                {
+		    eprintln!("[icelauncher] Failed to scan shell commands: {e}");
+		    vec![]
+		});
 		yield Message::EntriesLoaded(entries);
 	}
 }
 
 
-/// Collect all executables reachable via $PATH and return them as AppEntry items.
 pub fn scan_shell_commands() -> Vec<AppEntry>
 {
 	let path_var = std::env::var("PATH").unwrap_or_default();
@@ -58,7 +57,8 @@ pub fn scan_shell_commands() -> Vec<AppEntry>
 			let Some(name) = path.file_name().and_then(|n| n.to_str()) else { continue };
 			if !seen.insert(name.to_string()) { continue; }
 
-			let entry = AppEntry {
+			let entry = AppEntry 
+                        {
 				name: name.to_string(),
 				generic_name: String::new(),
 				exec: name.to_string(),
@@ -100,15 +100,19 @@ pub fn scan_desktop_files() -> Vec<AppEntry>
 	let mut seen_stems = std::collections::HashSet::new();
 	let mut paths: Vec<PathBuf> = Vec::new();
 
-	for dir in search_dirs {
+	for dir in search_dirs 
+        {
 		let Ok(dir_entries) = std::fs::read_dir(&dir) else { continue };
-		for file in dir_entries.flatten() {
+		for file in dir_entries.flatten() 
+                {
 			let path = file.path();
-			if !is_desktop_file(&path) {
+			if !is_desktop_file(&path) 
+                        {
 				continue;
 			}
 			let stem = file_stem(&path);
-			if seen_stems.insert(stem) {
+			if seen_stems.insert(stem) 
+                        {
 				paths.push(path);
 			}
 		}
@@ -116,10 +120,10 @@ pub fn scan_desktop_files() -> Vec<AppEntry>
 
 	let mut entries: Vec<AppEntry> = paths
 		.par_iter()
-		.filter_map(|path| {
+		.filter_map(|path| 
+                {
 			let mut entry = parse_desktop_file(path)?;
-			entry.icon_path =
-				crate::helpers::icon::resolve_icon_with(&entry.icon, &icon_bases, &icon_themes);
+			entry.icon_path = crate::helpers::icon::resolve_icon_with(&entry.icon, &icon_bases, &icon_themes);
 			Some(entry.with_normalized())
 		})
 		.collect();
@@ -291,21 +295,49 @@ pub fn parse_desktop_file_for_session(path: &Path, current_desktop: Option<&[Str
 	}
 
 	// Pick the most specific locale name available.
-	let resolved_name = if !name_locale.is_empty()       { name_locale }
-	                    else if !name_locale_short.is_empty() { name_locale_short }
-	                    else                              { name };
+	let resolved_name = if !name_locale.is_empty()
+        {
+            name_locale 
+        }
+	else if !name_locale_short.is_empty() 
+        {
+            name_locale_short 
+        } 
+        else                              
+        {
+            name 
+        };
 
 	// Resolve localized GenericName.
-	let resolved_generic = if !generic_locale.is_empty()       { generic_locale }
-	                       else if !generic_locale_short.is_empty() { generic_locale_short }
-	                       else                               { generic_name };
+	let resolved_generic = if !generic_locale.is_empty() 
+        {
+            generic_locale 
+        } 
+        else if !generic_locale_short.is_empty() 
+        {
+            generic_locale_short 
+        } 
+        else
+        {
+            generic_name 
+        };
 
 	// Resolve localized Comment.
-	let resolved_comment = if !comment_locale.is_empty()       { comment_locale }
-	                       else if !comment_locale_short.is_empty() { comment_locale_short }
-	                       else                               { comment };
+	let resolved_comment = if !comment_locale.is_empty()
+        {
+            comment_locale 
+        } 
+        else if !comment_locale_short.is_empty()
+        {
+            comment_locale_short 
+        } 
+        else
+        {
+            comment 
+        };
 
-	Some(AppEntry {
+	Some(AppEntry 
+        {
 		name: resolved_name,
 		generic_name: resolved_generic,
 		exec,
@@ -345,18 +377,23 @@ pub fn tokenize(s: &str) -> Vec<String>
 	let mut in_quotes = false;
 	let mut quote_char = ' ';
 
-	for ch in s.chars() {
+	for ch in s.chars() 
+        {
 		match ch
 		{
-			'"' | '\'' if !in_quotes => {
+			'"' | '\'' if !in_quotes => 
+                        {
 				in_quotes = true;
 				quote_char = ch;
 			}
-			c if in_quotes && c == quote_char => {
+			c if in_quotes && c == quote_char => 
+                        {
 				in_quotes = false;
 			}
-			' ' if !in_quotes => {
-				if !current.is_empty() {
+			' ' if !in_quotes => 
+                        {
+				if !current.is_empty() 
+                                {
 					tokens.push(current.clone());
 					current.clear();
 				}
@@ -365,7 +402,8 @@ pub fn tokenize(s: &str) -> Vec<String>
 		}
 	}
 
-	if !current.is_empty() {
+	if !current.is_empty()
+        {
 		tokens.push(current);
 	}
 	tokens
@@ -390,8 +428,10 @@ fn application_search_dirs() -> Vec<PathBuf>
 	dirs.push(home.join(".local/share/flatpak/exports/share/applications"));
 
 	// XDG_DATA_DIRS (includes system Flatpak exports when set by the session).
-	if let Ok(xdg_dirs) = std::env::var("XDG_DATA_DIRS") {
-		for path in xdg_dirs.split(':').filter(|s| !s.is_empty()) {
+	if let Ok(xdg_dirs) = std::env::var("XDG_DATA_DIRS") 
+        {
+		for path in xdg_dirs.split(':').filter(|s| !s.is_empty()) 
+                {
 			dirs.push(PathBuf::from(path).join("applications"));
 		}
 	}
@@ -429,9 +469,5 @@ fn file_stem(path: &Path) -> String
 
 fn parse_keywords(raw: &str) -> Vec<String>
 {
-	// Preserve the original casing from the .desktop file.
-	// The lowercase version is produced later by AppEntry::with_normalized()
-	// into keywords_lc, which is what case-insensitive search uses.
-	// Lowercasing here would break case-sensitive keyword searches.
 	raw.split(';').map(|s| s.trim().to_string()).filter(|s| !s.is_empty()).collect()
 }

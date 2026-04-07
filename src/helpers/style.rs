@@ -18,33 +18,32 @@ use crate::AppData;
 
 
 // ============ FUNCTIONS ============
-pub fn global_style(_app: &AppData, _theme: &Theme)
--> iced_layershell::reexport::core::theme::Style
+pub fn global_style(_app: &AppData, _theme: &Theme) -> iced_layershell::reexport::core::theme::Style
 {
-	iced_layershell::reexport::core::theme::Style {
+	iced_layershell::reexport::core::theme::Style 
+        {
 		background_color: Color::TRANSPARENT,
 		text_color: Color::WHITE,
 	}
 }
 
 
-pub fn entry_button_style(
-	status: Status,
-	is_selected: bool,
-	config: &LauncherConfig,
-) -> button::Style
+pub fn entry_button_style(status: Status, is_selected: bool, config: &LauncherConfig) -> button::Style
 {
 	let entry = &config.entry;
 	let radius = entry.border_radius;
 	let (bg_color, bg_gradient) = entry_background(status, is_selected, config);
 
-	button::Style {
+	button::Style 
+        {
 		background: Some(color_or_gradient(bg_gradient, bg_color)),
 		text_color: entry.text_color.to_iced(),
-		border: Border {
+		border: Border 
+                {
 			color: entry_border_color(status, is_selected, config),
 			width: entry.border_width,
-			radius: Radius {
+			radius: Radius 
+                        {
 				top_left:     radius[0],
 				top_right:    radius[1],
 				bottom_left:  radius[2],

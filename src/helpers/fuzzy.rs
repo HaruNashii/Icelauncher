@@ -1,16 +1,22 @@
 // ============ FUNCTIONS ============
 pub fn fuzzy_score(needle: &str, haystack: &str) -> i32
 {
-	if needle.is_empty() {
+	if needle.is_empty() 
+        {
 		return 1;
 	}
-	if needle.len() > haystack.len() {
+
+	if needle.len() > haystack.len() 
+        {
 		return 0;
 	}
 
-	if needle.is_ascii() && haystack.is_ascii() {
+	if needle.is_ascii() && haystack.is_ascii() 
+        {
 		fuzzy_score_ascii(needle.as_bytes(), haystack.as_bytes())
-	} else {
+	} 
+        else 
+        {
 		fuzzy_score_unicode(needle, haystack)
 	}
 }
@@ -25,8 +31,10 @@ fn fuzzy_score_ascii(needle: &[u8], haystack: &[u8]) -> i32
 	let mut prev_hi: usize = usize::MAX;
 
 	let mut hi = 0;
-	while hi < haystack.len() && ni < needle.len() {
-		if haystack[hi] != needle[ni] {
+	while hi < haystack.len() && ni < needle.len() 
+        {
+		if haystack[hi] != needle[ni] 
+                {
 			consecutive = 0;
 			hi += 1;
 			continue;
@@ -35,9 +43,12 @@ fn fuzzy_score_ascii(needle: &[u8], haystack: &[u8]) -> i32
 		consecutive = if prev_hi.wrapping_add(1) == hi { consecutive + 1 } else { 0 };
 
 		score += 1 + consecutive * 2;
-		if hi == 0 {
+		if hi == 0 
+                {
 			score += 5;
-		} else if is_word_boundary_byte(haystack[hi - 1]) {
+		} 
+                else if is_word_boundary_byte(haystack[hi - 1]) 
+                {
 			score += 3;
 		}
 
@@ -58,10 +69,12 @@ fn fuzzy_score_unicode(needle: &str, haystack: &str) -> i32
 	let mut prev_byte_pos: usize = usize::MAX;
 	let mut prev_char_end: usize = usize::MAX;
 
-	for (byte_pos, haystack_char) in haystack.char_indices() {
+	for (byte_pos, haystack_char) in haystack.char_indices() 
+        {
 		let Some(&needle_char) = needle_chars.peek() else { break };
 
-		if haystack_char != needle_char {
+		if haystack_char != needle_char 
+                {
 			consecutive = 0;
 			continue;
 		}
@@ -69,11 +82,15 @@ fn fuzzy_score_unicode(needle: &str, haystack: &str) -> i32
 		consecutive = if prev_char_end == byte_pos { consecutive + 1 } else { 0 };
 
 		score += 1 + consecutive * 2;
-		if byte_pos == 0 {
+		if byte_pos == 0 
+                {
 			score += 5;
-		} else if prev_byte_pos != usize::MAX {
+		} 
+                else if prev_byte_pos != usize::MAX 
+                {
 			let prev_char = haystack[prev_byte_pos..].chars().next().unwrap_or(' ');
-			if is_word_boundary(prev_char) {
+			if is_word_boundary(prev_char) 
+                        {
 				score += 3;
 			}
 		}

@@ -118,21 +118,17 @@ fn resolve_count_text(app: &AppData) -> String
 
     if total > app.config.window.max_results
     {
-        // More results than the window can display: show "X / Y results"
         app.config.footer.count_format
             .replace("{shown}", &shown.to_string())
             .replace("{total}", &total.to_string())
     }
     else if total == 1
     {
-        // Exactly one result: use the singular format, e.g. "1 result"
         app.config.footer.single_format
             .replace("{total}", &total.to_string())
     }
     else
     {
-        // Multiple results that all fit: use count_format without a cap note,
-        // replacing {shown} and {total} with the same value.
         app.config.footer.count_format
             .replace("{shown}", &total.to_string())
             .replace("{total}", &total.to_string())
