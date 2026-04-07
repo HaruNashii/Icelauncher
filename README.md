@@ -15,10 +15,15 @@ It aims to provide a **minimal, fast, and fully themeable launcher** designed fo
 - 🎨 UI powered by `iced`
 - 🖼 Real app icons fetched from the system icon theme
 - 🔲 Grid layout support (list or NxN grid)
-- ⌨️ Full keyboard navigation (arrows, enter, escape)
-- 🔍 Fuzzy-style search across name, comment, exec, and keywords
+- ⌨️ Full keyboard navigation (arrows, enter, escape, and configurable keybinds)
+- ⚡ Quick-launch shortcuts (`Alt+1` through `Alt+9`)
+- 🔍 Scored search across name, comment, exec, and keywords — with fuzzy fallback
 - 🖥 Terminal app support via configurable terminal command
-- 🎛 Fully themeable via RON config (colors, borders, shadows, radii, fonts, spacing...)
+- 🧮 Built-in calculator mode
+- 🔥 Frecency tracking — frequently launched apps surface automatically
+- 🐚 Shell mode for command launching (`--shell` / `-s`)
+- 📋 `wl-copy` integration for copying calculator results
+- 🎛 Fully themeable via RON config (colors, borders, shadows, radii, fonts, spacing, scrollbar, separators...)
 - 🪶 Lightweight and compositor-friendly
 
 ---
@@ -36,11 +41,11 @@ Instead, it acts as a:
 
 ### Core responsibilities
 
-- scans `.desktop` files from standard XDG directories
-- resolves real app icons from the system icon theme (hicolor, Papirus, Adwaita, Flatpak, etc.)
-- renders a searchable, navigable list or grid of applications
-- launches the selected app (with optional terminal wrapping)
-- closes itself after launch
+- Scans `.desktop` files from standard XDG directories
+- Resolves real app icons from the system icon theme (hicolor, Papirus, Adwaita, Flatpak, etc.)
+- Renders a searchable, navigable list or grid of applications
+- Launches the selected app (with optional terminal wrapping)
+- Closes itself after launch
 
 Conceptually:
 ```
@@ -111,6 +116,18 @@ bindsym $mod+d exec icelauncher
 
 ---
 
+## 🐚 Shell Mode
+
+Launch Icelauncher in shell mode to search and run arbitrary commands instead of `.desktop` entries:
+
+```bash
+icelauncher --shell
+# or
+icelauncher -s
+```
+
+---
+
 ## 🎨 Configuration
 
 On first launch, Icelauncher generates a default config at:
@@ -125,11 +142,13 @@ The config is fully documented inline. Every visual and behavioural property is 
 | Section | What it controls |
 |---|---|
 | `window` | Size, padding, grid columns, border, shadow, background |
-| `search` | Placeholder, font size, colors, border |
-| `entry` | Name/comment font, padding, hover/selected/pressed colors |
-| `icon` | Real vs abstract icons, badge size, colors, border |
-| `footer` | Hint text, result count, colors |
-| `behaviour` | Search fields, case sensitivity, terminal command, close on launch |
+| `scrollbar` | Rail color, scroller color, border, width, margin |
+| `search` | Placeholder, font size, colors, border, position, orientation |
+| `entry` | Name/comment font, padding, hover/selected/pressed colors, separators, shortcuts |
+| `icon` | Real vs abstract icons, size, colors, border, gradients |
+| `footer` | Hint text, result count, colors, position |
+| `behaviour` | Search fields, case sensitivity, terminal command, calculator, frecency, close on launch |
+| `keybinds` | Navigation keys, close key, quick-launch prefix |
 
 ### Color Formats
 
@@ -161,15 +180,43 @@ terminal_command: "kitty -e"
 // or: "alacritty -e" | "foot" | "wezterm -e"
 ```
 
+### Calculator Mode
+
+When `calc_enabled: true` (default), typing a math expression shows the result inline as the first entry. Press Enter to copy it to clipboard via `wl-copy`.
+
+```ron
+calc_enabled: true
+```
+
+### Frecency
+
+Icelauncher tracks how often and how recently you launch each app. Apps above a configurable launch count threshold get a 🔥 badge and are ranked higher on empty queries.
+
+```ron
+show_hot_apps:      true
+hot_apps_threshold: 4       // launches needed to show badge
+hot_apps_icon:      "🔥"
+```
+
+### Quick-Launch Shortcuts
+
+The first 9 results can be launched directly with `Alt+1` through `Alt+9` (prefix is configurable):
+
+```ron
+keybinds: (
+    launch_alt_prefix: "Alt",
+)
+```
+
 ---
 
 ## 🧩 Architecture Overview
 
 ```
 src/
-├── main.rs          → application entry point + AppData + Message
+├── main.rs          → application entry point, AppData, Message, update logic
 ├── subscription.rs  → iced subscriptions (keyboard events)
-├── update.rs        → iced message handler
+├── update.rs        → iced message handler (launch, scroll, hover, copy feedback)
 ├── view.rs          → iced renderer
 ├── ron.rs           → RON config structs + loader
 ├── helpers/*.rs     → app scanning, icon resolution, search, style helpers
@@ -187,9 +234,17 @@ src/
 - Walks the system icon theme tree (standard layout, alternate layout, Flatpak exports, pixmaps) to find the best matching icon for each app.
 
 **4. Search Engine**
-- Scores and ranks results across name, comment, exec, and keywords with configurable field toggles and case sensitivity.
+- Scores and ranks results across name, comment, exec, and keywords.
+- Uses SIMD-accelerated substring matching (via `memchr`) as the primary pass, with a fuzzy scorer as fallback for near-matches.
+- Results are tiered: name prefix → name contains → keyword → exec → comment → fuzzy, then broken by frecency score.
 
-**5. Event Model**
+**5. Frecency Tracker**
+- Records launch timestamps and counts per app. Combines recency and frequency into a single score used for empty-query sorting and hot-app badges.
+
+**6. Calculator**
+- Evaluates math expressions entered in the search bar and surfaces the result as a selectable entry. Copies the result via `wl-copy` on launch.
+
+**7. Event Model**
 - Follows iced's update/view architecture:
   - Message → Update → State → View
 
