@@ -10,7 +10,7 @@ use crate::
 {
     AppData, Message,
     helpers::color::color_or_gradient,
-    helpers::widget::{corner_radius, make_font_family, optional_length, optional_length_shrink},
+    helpers::widget::{corner_radius, optional_length, optional_length_shrink},
     ron::{SearchOrientation, SearchPosition},
 };
 
@@ -40,7 +40,6 @@ pub fn build_search_bar(app: &AppData) -> Element<'_, Message>
         search_config.border_color.to_iced()
     };
 
-    let font           = make_font_family(&search_config.font_weight, &search_config.font_style, &search_config.font_family);
     let radius         = search_config.border_radius;
     let submit_message = resolve_submit_message(app);
 
@@ -59,7 +58,7 @@ pub fn build_search_bar(app: &AppData) -> Element<'_, Message>
         .on_submit(submit_message.clone())
         .size(search_config.text_size)
         .padding(search_config.input_padding as f32)
-        .font(font)
+        .font(app.search_bar_font)
         .style({
             move |_theme, _status| iced::widget::text_input::Style 
             {
@@ -121,7 +120,6 @@ fn resolve_submit_message(app: &AppData) -> Message
 fn build_vertical_search<'a>(app: &'a AppData, background: iced::Background, border_color: iced::Color, submit_msg: Message) -> Element<'a, Message>
 {
     let search_config = &app.config.search;
-    let font          = make_font_family(&search_config.font_weight, &search_config.font_style, &search_config.font_family);
     let radius        = search_config.border_radius;
     let placeholder   = if app.shell_mode { "Run command...".to_string() } else { search_config.placeholder.clone() };
     let display_text  = if app.query.is_empty() { placeholder } else { app.query.clone() };
@@ -141,7 +139,7 @@ fn build_vertical_search<'a>(app: &'a AppData, background: iced::Background, bor
             .chars()
             .map(|c| 
             {
-                container(text(c.to_string()).size(search_config.text_size).color(char_color).font(font))
+                container(text(c.to_string()).size(search_config.text_size).color(char_color).font(app.search_bar_font))
                 .width(Length::Fill)
                 .align_x(Alignment::Center)
                 .into()

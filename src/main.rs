@@ -3,14 +3,17 @@ use iced_layershell::application;
 use iced_layershell::reexport::{KeyboardInteractivity, Layer};
 use iced_layershell::settings::{LayerShellSettings, Settings, StartMode};
 use iced_layershell::to_layer_message;
+use iced::Font;
 
 
 
 
 // ============ CRATES ============
+use crate::helpers::color::{ConvertedEntriesColor, convert_entry_color};
 use crate::helpers::frecency::FrecencyStore;
 use crate::helpers::monitor::get_monitor_res;
 use crate::helpers::style::global_style;
+use crate::helpers::widget::{make_font, make_font_family};
 use crate::ron::{anchor_from_config, LauncherConfig, load_config};
 use crate::subscription::subscription;
 use crate::update::update;
@@ -69,6 +72,11 @@ pub struct AppData
 	pub hovered: Option<usize>,
 	pub shell_mode: bool,
 
+        pub footer_font: Font,
+        pub search_bar_font: Font,
+        pub name_font: Font,
+        pub comment_font: Font,
+        pub converted_entry_color: ConvertedEntriesColor,
 }
 
 #[to_layer_message]
@@ -177,6 +185,17 @@ pub fn main() -> Result<(), iced_layershell::Error>
             config.window.height = window_size.1;
         };
 
+        let entry_config = &config.entry;
+        let name_font    = make_font_family(&entry_config.name_font_weight,    &entry_config.name_font_style,    &entry_config.name_font_family);
+        let comment_font = make_font_family(&entry_config.comment_font_weight, &entry_config.comment_font_style, &entry_config.comment_font_family);
+        let entries_colors = convert_entry_color(entry_config);
+
+        let search_config = &config.search;
+        let search_bar_font = make_font_family(&search_config.font_weight, &search_config.font_style, &search_config.font_family);
+
+        let footer_config = &config.footer;
+        let footer_font       = make_font(&footer_config.font_weight, &footer_config.font_style);
+
 	let initial_state = AppData 
         {
 		loading: true,
@@ -184,6 +203,11 @@ pub fn main() -> Result<(), iced_layershell::Error>
 		frecency,
 		wl_copy_available,
 		shell_mode,
+                search_bar_font,
+                name_font,
+                comment_font,
+                footer_font,
+                converted_entry_color: entries_colors,
 		..Default::default()
 	};
 

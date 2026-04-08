@@ -8,7 +8,7 @@ use iced_layershell::reexport::core::Border;
 // ============ CRATES ============
 use crate::{AppData, Message};
 use crate::helpers::color::color_or_gradient;
-use crate::helpers::widget::{corner_radius, make_font, optional_length, optional_length_shrink};
+use crate::helpers::widget::{corner_radius, optional_length, optional_length_shrink};
 use crate::ron::{FooterOrientation, FooterPosition};
 
 
@@ -25,12 +25,11 @@ pub fn build_footer(app: &AppData) -> Element<'_, Message>
 
     let hint_text  = resolve_hint_text(footer_config, app.shell_mode);
     let count_text = resolve_count_text(app);
-    let font       = make_font(&footer_config.font_weight, &footer_config.font_style);
     let is_vertical = footer_config.text_orientation == FooterOrientation::Vertical;
 
     let hint_element = if footer_config.show_hint 
     {
-        make_footer_text(hint_text, footer_config.text_size, footer_config.hint_color.to_iced(), font, is_vertical)
+        make_footer_text(hint_text, footer_config.text_size, footer_config.hint_color.to_iced(), app.footer_font, is_vertical)
     } 
     else 
     {
@@ -39,7 +38,7 @@ pub fn build_footer(app: &AppData) -> Element<'_, Message>
 
     let count_element = if footer_config.show_count && !app.loading 
     {
-        make_footer_text(count_text, footer_config.text_size, footer_config.count_color.to_iced(), font, is_vertical)
+        make_footer_text(count_text, footer_config.text_size, footer_config.count_color.to_iced(), app.footer_font, is_vertical)
     }
     else 
     {

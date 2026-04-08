@@ -244,6 +244,20 @@ LauncherConfig
         hovered_border_color:  HEX("3d3d3d"),
         border_width:          1.0,
         border_radius:         (6.0, 6.0, 6.0, 6.0),
+
+        generic_icon:               "🎲",
+        terminal_generic_icon:      "⊞",
+        browser_generic_icon:       "🌐",
+        music_player_generic_icon:  "♫",
+        file_manager_generic_icon:  "📁",
+        text_editor_generic_icon:   "📝",
+        media_viewer_generic_icon:  "🖼",
+        code_generic_icon:          "</>",
+        mail_generic_icon:          "✉",
+        calc_generic_icon:          "🧮",
+        setting_generic_icon:       "⚙",
+        game_generic_icon:          "🎮",
+        social_media_generic_icon:  "💬"
     ),
 
     footer:
@@ -798,6 +812,21 @@ pub struct IconConfig
     pub hovered_border_color: ColorType,
     pub border_width: f32,
     pub border_radius: [f32; 4],
+
+ 
+    pub generic_icon: String,
+    pub terminal_generic_icon: String,
+    pub browser_generic_icon: String,
+    pub music_player_generic_icon: String,
+    pub file_manager_generic_icon: String,
+    pub text_editor_generic_icon: String,
+    pub media_viewer_generic_icon: String,
+    pub code_generic_icon: String,
+    pub mail_generic_icon: String,
+    pub calc_generic_icon: String,
+    pub setting_generic_icon: String,
+    pub game_generic_icon: String,
+    pub social_media_generic_icon: String
 }
 
 impl Default for IconConfig
@@ -830,6 +859,20 @@ impl Default for IconConfig
             hovered_border_color: hex_color("3d3d3d"),
             border_width: 1.0,
             border_radius: [6.0, 6.0, 6.0, 6.0],
+            
+            generic_icon:               "🎲".to_string(),
+            terminal_generic_icon:      "⊞".to_string(),
+            browser_generic_icon:       "🌐".to_string(),
+            music_player_generic_icon:  "♫".to_string(),
+            file_manager_generic_icon:  "📁".to_string(),
+            text_editor_generic_icon:   "📝".to_string(),
+            media_viewer_generic_icon:  "🖼".to_string(),
+            code_generic_icon:          "</>".to_string(),
+            mail_generic_icon:          "✉".to_string(),
+            calc_generic_icon:          "🧮".to_string(),
+            setting_generic_icon:       "⚙".to_string(),
+            game_generic_icon:          "🎮".to_string(),
+            social_media_generic_icon:  "💬".to_string()
         }
     }
 }

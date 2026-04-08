@@ -1,0 +1,237 @@
+// ╭─────────────────────────────────────────────────────────────────────────╮
+// │   G R U V B O X - W I F E  ·   ICELAUNCHER                              │
+// │   Wide top-anchored. Full-span. Warm retro grid.                        │
+// ╰─────────────────────────────────────────────────────────────────────────╯
+
+LauncherConfig
+(
+    window:
+    (
+        width:              450,
+        height:             650,
+        max_results:        24,
+        padding:            14,
+        section_spacing:    0,
+        entry_spacing:      3,
+        grid_side_items:    1,
+        grid_column_spacing: 6,
+
+        border_radius:      (8.0, 8.0, 8.0, 8.0),
+        border_width:       0.0,
+        border_color:       RGBA((0, 0, 0, 0)),
+        background_color:   RGBA((40, 40, 40, 100)),
+        shadow_color:       RGBA((0, 0, 0, 50)),
+        shadow_offset_x:    0.0,
+        shadow_offset_y:    6.0,
+        shadow_blur:        18.0,
+
+        anchor:             TopLeft,
+        margin_top:         47,
+        margin_bottom:      0,
+        margin_left:        10,
+        margin_right:       0,
+    ),
+
+    scrollbar:
+    (
+        show:                    true,
+        width:                   4,
+        margin:                  0,
+        scroller_width:          3,
+        border_radius:           (0.0, 0.0, 0.0, 0.0),
+        rail_color:              RGBA((0, 0, 0, 0)),
+        rail_border_color:       RGBA((0, 0, 0, 0)),
+        rail_border_width:       0.0,
+        scroller_color:          RGBA((250, 189, 47, 40)),
+        scroller_hovered_color:  RGBA((250, 189, 47, 65)),
+        scroller_dragging_color: RGBA((250, 189, 47, 85)),
+        scroller_border_color:   RGBA((0, 0, 0, 0)),
+        scroller_border_width:   0.0,
+    ),
+
+    search:
+    (
+        placeholder:               "Search applications...",
+        text_size:                 14,
+        input_padding:             10,
+        bottom_margin:             10.0,
+
+        background_color:          RGB((60, 56, 54)),
+        background_gradient:       None,
+        focused_background_color:  RGB((60, 56, 54)),
+        focused_background_gradient: None,
+        border_color:              RGBA((0, 0, 0, 0)),
+        focused_border_color:      RGB((250, 189, 47)),
+        border_width:              1.5,
+        border_radius:             (6.0, 6.0, 6.0, 6.0),
+
+        text_color:                RGB((235, 219, 178)),
+        placeholder_color:         RGB((102, 92, 84)),
+        selection_color:           RGBA((250, 189, 47, 40)),
+
+        icon:                      "",
+        icon_color:                RGB((102, 92, 84)),
+
+        font_weight:               Normal,
+        font_style:                Normal,
+        font_family:               "",
+
+        position:                  Top,
+        orientation:               Horizontal,
+        width:                     0,
+        height:                    0,
+        fixed_x:                   None,
+        fixed_y:                   None,
+    ),
+
+    entry:
+    (
+        name_size:              13,
+        name_color:             RGB((235, 219, 178)),
+        selected_name_color:    RGB((251, 241, 199)),
+        hovered_name_color:     RGB((254, 128, 25)),
+        name_font_weight:       Normal,
+        name_font_style:        Normal,
+        name_font_family:       "",
+        name_align:             Left,
+        name_max_chars:         40,
+
+        comment_size:           10,
+        comment_color:          RGB((102, 92, 84)),
+        selected_comment_color: RGB((142, 192, 124)),
+        hovered_comment_color:  RGB((102, 92, 84)),
+        comment_font_weight:    Normal,
+        comment_font_style:     Normal,
+        comment_font_family:    "",
+        comment_align:          Left,
+        comment_max_chars:      22,
+        show_comment:           false,
+        name_comment_spacing:   2,
+
+        padding:                (8, 6, 8, 6),
+        label_position:         Right,
+        width:                  0,
+        height:                 0,
+
+        background_color:       RGB((152, 151, 26)),
+        hovered_color:          RGB((60, 56, 54)),
+        pressed_color:          RGB((29, 32, 33)),
+        selected_color:         RGB((84, 55, 44)),
+        selected_hovered_color: RGB((84, 55, 44)),
+        text_color:             RGB((235, 219, 178)),
+
+        border_color:           RGBA((0, 0, 0, 0)),
+        selected_border_color:  RGBA((250, 189, 47, 60)),
+        hovered_border_color:   RGBA((0, 0, 0, 0)),
+        pressed_border_color:   RGBA((0, 0, 0, 0)),
+        border_width:           1.0,
+        border_radius:          (6.0, 6.0, 6.0, 6.0),
+
+        shadow_color:               RGBA((0, 0, 0, 0)),
+        shadow_offset_x:            0.0,
+        shadow_offset_y:            0.0,
+        shadow_blur:                0.0,
+        selected_shadow_color:      RGBA((0, 0, 0, 0)),
+        selected_shadow_offset_x:   0.0,
+        selected_shadow_offset_y:   0.0,
+        selected_shadow_blur:       0.0,
+        hovered_shadow_color:       RGBA((0, 0, 0, 0)),
+        hovered_shadow_offset_x:    0.0,
+        hovered_shadow_offset_y:    0.0,
+        hovered_shadow_blur:        0.0,
+
+        wrap_word:                      false,
+        ellipsize_instead_of_wrapping:   true,
+        ellipsis:                       "...",
+
+        show_separator:     false,
+        separator_color:    RGBA((60, 56, 54, 80)),
+        separator_width:    1.0,
+
+	show_hot_apps:      false,
+	show_shortcut_hint: false
+    ),
+
+    icon:
+    (
+        show:                  true,
+        use_real_icons:        true,
+        width:                 44,
+        height:                44,
+        text_size:             20,
+        gap:                   8,
+        padding:               (0, 0),
+        opacity:               0.9,
+        selected_opacity:      1.0,
+        hovered_opacity:       1.0,
+
+        background_color:      RGB((60, 56, 54)),
+        hovered_color:         RGB((80, 73, 69)),
+        selected_color:        RGBA((214, 93, 14, 60)),
+        icon_color:            RGB((250, 189, 47)),
+        selected_icon_color:   RGB((255, 255, 255)),
+        hovered_icon_color:    RGB((254, 128, 25)),
+
+        border_color:          RGBA((0, 0, 0, 0)),
+        selected_border_color: RGBA((250, 189, 47, 70)),
+        hovered_border_color:  RGBA((0, 0, 0, 0)),
+        border_width:          1.0,
+        border_radius:         (8.0, 8.0, 8.0, 8.0),
+    ),
+
+    footer:
+    (
+        show:             false,
+        show_hint:        false,
+        hint_text:        "",
+        show_count:       true,
+        count_format:     "{shown} / {total}",
+        single_format:    "{total}",
+        text_size:        11,
+        text_color:       RGB((102, 92, 84)),
+        hint_color:       RGB((102, 92, 84)),
+        count_color:      RGB((250, 189, 47)),
+        font_weight:      Normal,
+        font_style:       Normal,
+        top_margin:       6.0,
+        padding:          (0, 0, 0, 0),
+        background_color: RGBA((0, 0, 0, 0)),
+        border_color:     RGBA((0, 0, 0, 0)),
+        border_width:     0.0,
+        border_radius:    (0.0, 0.0, 0.0, 0.0),
+        position:         Bottom,
+        text_orientation: Horizontal,
+        width:            0,
+        height:           0,
+    ),
+
+    behaviour:
+    (
+        search_name:        true,
+        search_comment:     true,
+        search_exec:        false,
+        search_keywords:    true,
+        case_sensitive:     false,
+        close_on_launch:    true,
+        terminal_command:   "",
+        calc_enabled:           true,
+        copy_feedback_text:     "Copied!",
+        copy_feedback_seconds:  2.0,
+        min_query_length:       0,
+        show_on_empty_query:    true,
+        max_empty_results:      0,
+    ),
+
+    keybinds:
+    (
+        close:              ["Escape"],
+        select_up:          ["ArrowUp"],
+        select_down:        ["ArrowDown"],
+        select_left:        ["ArrowLeft"],
+        select_right:       ["ArrowRight", "Tab"],
+        launch_alt_prefix:  "Alt",
+        relaunch_key:       "l",
+    ),
+
+    background_images: [],
+)

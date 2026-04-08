@@ -20,7 +20,7 @@ use crate::
         scroll::row_height,
         style::entry_button_style,
         text::apply_entry_text_rules,
-        widget::{corner_radius, horizontal_align, make_font_family},
+        widget::{corner_radius, horizontal_align},
     }, 
 };
 
@@ -172,12 +172,14 @@ fn build_entry_button<'a>(app: &'a AppData, index: usize, entry: &'a AppEntry) -
 fn build_icon_element<'a>(app: &'a AppData, entry: &'a AppEntry, is_selected: bool, is_hovered: bool, is_calc: bool) -> Element<'a, Message>
 {
     let icon_config = &app.config.icon;
-    if !icon_config.show 
-    {
-        return Space::new().into();
-    }
+    if !icon_config.show { return Space::new().into(); }
+    let radius = icon_config.border_radius;
+    let ip = icon_config.padding;
+    let border_color = if is_selected { icon_config.selected_border_color.to_iced() } else if is_hovered { icon_config.hovered_border_color.to_iced() } else { icon_config.border_color.to_iced()       };
+    let icon_color   = if is_selected { icon_config.selected_icon_color.to_iced()   } else if is_hovered { icon_config.hovered_icon_color.to_iced()   } else { icon_config.icon_color.to_iced()         };
+    let opacity      = if is_selected { icon_config.selected_opacity                } else if is_hovered { icon_config.hovered_opacity                } else { icon_config.opacity                      };
+    let border_width = icon_config.border_width;
 
-    let radius       = icon_config.border_radius;
     let (bg_color, bg_gradient) = if is_selected
     {
         (icon_config.selected_color,    icon_config.selected_gradient.as_ref())
@@ -190,10 +192,7 @@ fn build_icon_element<'a>(app: &'a AppData, entry: &'a AppEntry, is_selected: bo
     {
         (icon_config.background_color,  icon_config.background_gradient.as_ref())
     };
-    let border_color = if is_selected { icon_config.selected_border_color.to_iced() } else if is_hovered { icon_config.hovered_border_color.to_iced() } else { icon_config.border_color.to_iced()       };
-    let icon_color   = if is_selected { icon_config.selected_icon_color.to_iced()   } else if is_hovered { icon_config.hovered_icon_color.to_iced()   } else { icon_config.icon_color.to_iced()         };
-    let opacity      = if is_selected { icon_config.selected_opacity                } else if is_hovered { icon_config.hovered_opacity                } else { icon_config.opacity                      };
-    let border_width = icon_config.border_width;
+
 
     let inner: Element<Message> = if is_calc 
     {
@@ -207,16 +206,15 @@ fn build_icon_element<'a>(app: &'a AppData, entry: &'a AppEntry, is_selected: bo
     {
         let glyph = if entry.comment.contains("Play this game on Steam")
         {
-            "🎮"
+            icon_config.game_generic_icon.clone()
         }
         else
         {
-            derive_icon_char(&entry.name)
+            derive_icon_char(&entry.name, icon_config.clone()).to_string()
         };
         iced::widget::text(glyph).size(icon_config.text_size).color(icon_color).into()
     };
 
-    let ip = icon_config.padding;
     container(inner)
         .width(icon_config.width)
         .height(icon_config.height)
@@ -262,7 +260,7 @@ fn build_real_icon<'a>(entry: &'a AppEntry, icon_config: &crate::ron::IconConfig
         .chars()
         .next()
         .map(|c| c.to_uppercase().to_string())
-        .unwrap_or_else(|| "▶".to_string());
+        .unwrap_or_else(|| icon_config.generic_icon.clone());
 
     iced::widget::text(fallback_letter).size(icon_config.text_size).color(icon_color).into()
 }
@@ -277,16 +275,13 @@ fn build_label_element<'a>(app: &'a AppData, entry: &'a AppEntry, is_selected: b
     let name_text    = apply_entry_text_rules(&entry.name,    entry_config.name_max_chars,    entry_config.ellipsize_instead_of_wrapping, entry_config.wrap_word, &entry_config.ellipsis);
     let comment_text = apply_entry_text_rules(&entry.comment, entry_config.comment_max_chars, entry_config.ellipsize_instead_of_wrapping, entry_config.wrap_word, &entry_config.ellipsis);
 
-    let name_color    = if is_selected { entry_config.selected_name_color.to_iced()    } else if is_hovered { entry_config.hovered_name_color.to_iced()    } else { entry_config.name_color.to_iced()    };
-    let comment_color = if is_selected { entry_config.selected_comment_color.to_iced() } else if is_hovered { entry_config.hovered_comment_color.to_iced() } else { entry_config.comment_color.to_iced() };
-
-    let name_font    = make_font_family(&entry_config.name_font_weight,    &entry_config.name_font_style,    &entry_config.name_font_family);
-    let comment_font = make_font_family(&entry_config.comment_font_weight, &entry_config.comment_font_style, &entry_config.comment_font_family);
+    let name_color    = if is_selected { app.converted_entry_color.name_selected_color    } else if is_hovered { app.converted_entry_color.name_hovered_color    } else { app.converted_entry_color.name_color    };
+    let comment_color = if is_selected { app.converted_entry_color.comment_selected_color } else if is_hovered { app.converted_entry_color.comment_hovered_color } else { app.converted_entry_color.comment_color };
 
     let name_element = iced::widget::text(name_text)
         .size(entry_config.name_size)
         .color(name_color)
-        .font(name_font)
+        .font(app.name_font)
         .align_x(horizontal_align(&entry_config.name_align))
         .wrapping(wrapping)
         .width(Length::Fill);
@@ -296,7 +291,7 @@ fn build_label_element<'a>(app: &'a AppData, entry: &'a AppEntry, is_selected: b
         iced::widget::text(comment_text)
             .size(entry_config.comment_size)
             .color(comment_color)
-            .font(comment_font)
+            .font(app.comment_font)
             .align_x(horizontal_align(&entry_config.comment_align))
             .wrapping(wrapping)
             .width(Length::Fill)
@@ -447,6 +442,8 @@ fn build_calc_copy_feedback<'a>(app: &'a AppData, icon: Element<'a, Message>, la
         .align_y(Alignment::Center)
         .into()
 }
+
+
 
 fn collect_right_badges(badges: EntryBadges<'_>) -> Vec<Element<'_, Message>>
 {

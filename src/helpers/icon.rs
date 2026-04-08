@@ -1,5 +1,6 @@
 // ============ IMPORTS ============
 use std::path::Path;
+use crate::ron::IconConfig;
 
 
 
@@ -14,26 +15,31 @@ const SIZES_FLAT: &[&str] = &
 [
 	"512", "256", "128", "96", "72", "64", "48", "36", "32", "24", "22", "16",
 ];
-const ICON_MAP: &[(&[&str], &str)] = &
-[
-	(&["terminal", "konsole", "tilix", "xterm", "wezterm", "xfce4-terminal", "terminator", "alacritty", "kitty", "foot", "kgx", "gnome-terminal", "ghostty"], "⊞"),
-	(&["firefox", "chromium", "browser", "chrome", "zen", "zen-browser", "brave", "vivaldi", "opera", "tor-browser", "edge", "librewolf", "epiphany"], "🌐"),
-	(&["music", "audacious", "strawberry", "lollypop", "amberol", "spotify", "rhythmbox", "mpv"], "♫"),
-	(&["file", "nemo", "pacmanfm", "caja", "krusader", "ranger", "nautilus", "dolphin", "thunar"], "📁"),
-	(&["text", "gedit", "notepad", "kate"], "📝"),
-	(&["image", "gwenview", "gthumb",  "feh", "eog", "vlc", "photo", "gimp", "inkscape", "krita"], "🖼"),
-	(&["code", "vscode", "vscodium", "vim", "neovim", "cmake"], "</>"),
-	(&["mail", "thunderbird", "email", "geary", "evolution", "mailspring"], "✉"),
-	(&["calc", "math", "kcalc", "calculator"], "🧮"),
-        (&["setting", "control", "adwsteamgtk", "system", "tweaks", "lxappearance", "nwg-look", "GTK Settings", "customize look and feel"], "⚙"),
-	(&["game", "steam", "lutris", "heroic", "epic", "epic_games", "EA app", "Battle", "GOG", "hydra", "fugus"], "🎮"),
-        (&["discord", "telegram"], "💬")
-];
 
 
 
 
 // ============ FUNCTIONS ============
+fn define_icon_map(icons: IconConfig) -> [(Vec<&'static str>, String); 12]
+{
+    [
+    	(vec!["terminal", "konsole", "tilix", "xterm", "wezterm", "xfce4-terminal", "terminator", "alacritty", "kitty", "foot", "kgx", "gnome-terminal", "ghostty"], icons.terminal_generic_icon),
+    	(vec!["firefox", "chromium", "browser", "chrome", "zen", "zen-browser", "brave", "vivaldi", "opera", "tor-browser", "edge", "librewolf", "epiphany"], icons.browser_generic_icon),
+    	(vec!["music", "audacious", "strawberry", "lollypop", "amberol", "spotify", "rhythmbox", "mpv"], icons.music_player_generic_icon),
+    	(vec!["file", "nemo", "pacmanfm", "caja", "krusader", "ranger", "nautilus", "dolphin", "thunar"], icons.file_manager_generic_icon),
+    	(vec!["text", "gedit", "notepad", "kate"], icons.text_editor_generic_icon),
+    	(vec!["image", "gwenview", "gthumb",  "feh", "eog", "vlc", "photo", "gimp", "inkscape", "krita"], icons.media_viewer_generic_icon),
+    	(vec!["code", "vscode", "vscodium", "vim", "neovim", "cmake"], icons.code_generic_icon),
+    	(vec!["mail", "thunderbird", "email", "geary", "evolution", "mailspring"], icons.mail_generic_icon),
+    	(vec!["calc", "math", "kcalc", "calculator"], icons.calc_generic_icon),
+        (vec!["setting", "control", "adwsteamgtk", "system", "tweaks", "lxappearance", "nwg-look", "GTK Settings", "customize look and feel"], icons.setting_generic_icon),
+    	(vec!["game", "steam", "lutris", "heroic", "epic", "epic_games", "EA app", "Battle", "GOG", "hydra", "fugus"], icons.game_generic_icon),
+        (vec!["discord", "telegram"], icons.social_media_generic_icon)
+    ]
+}
+
+
+
 pub fn resolve_icon_with(icon: &str, bases: &[String], themes: &[String]) -> Option<String>
 {
 	if icon.is_empty() 
@@ -288,17 +294,17 @@ fn read_theme_parents(theme: &str, bases: &[String]) -> Vec<String>
 
 
 
-pub fn derive_icon_char(name: &str) -> &'static str
+pub fn derive_icon_char(name: &str, config: IconConfig) -> String
 {
 	let lower = name.to_lowercase();
-	for (keywords, glyph) in ICON_MAP 
+	for (keywords, glyph) in define_icon_map(config.clone())
         {
 		if keywords.iter().any(|k| lower.contains(k)) 
                 {
 			return glyph;
 		}
 	}
-	"🎲"
+        config.generic_icon
 }
 
 

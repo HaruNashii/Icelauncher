@@ -1,10 +1,24 @@
 // ============ IMPORTS ============
 use serde::{Deserialize, Serialize};
+use crate::ron::EntryConfig;
+use iced::Color;
+
 
 
 
 
 // ============ ENUM/STRUCT, ETC ============
+#[derive(Default, Clone)]
+pub struct ConvertedEntriesColor
+{
+    pub name_color: Color,
+    pub name_hovered_color: Color,
+    pub name_selected_color: Color,
+    pub comment_color: Color,
+    pub comment_hovered_color: Color,
+    pub comment_selected_color: Color,
+}
+
 #[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
 pub enum Gradient
 {
@@ -75,6 +89,20 @@ impl ColorType
 
 
 // ============ FUNCTIONS ============
+pub fn convert_entry_color(entry_config: &EntryConfig) -> ConvertedEntriesColor
+{
+    ConvertedEntriesColor
+    {
+        name_color: entry_config.name_color.to_iced(),
+        name_hovered_color: entry_config.hovered_name_color.to_iced(),
+        name_selected_color: entry_config.selected_name_color.to_iced(),
+
+        comment_color: entry_config.comment_color.to_iced(),
+        comment_hovered_color: entry_config.hovered_comment_color.to_iced(),
+        comment_selected_color: entry_config.selected_comment_color.to_iced()
+    }
+}
+
 pub fn hex_color(s: &str) -> ColorType
 {
 	let mut bytes = [0u8; 9];
