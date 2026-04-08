@@ -7,12 +7,12 @@ LauncherConfig
 (
     window:
     (
-        width:              450,
-        height:             650,
-        max_results:        24,
+        width:              600,
+        height:             435,
+        max_results:        8,
         padding:            14,
         section_spacing:    0,
-        entry_spacing:      3,
+        entry_spacing:      0,
         grid_side_items:    1,
         grid_column_spacing: 6,
 
@@ -25,16 +25,16 @@ LauncherConfig
         shadow_offset_y:    6.0,
         shadow_blur:        18.0,
 
-        anchor:             TopLeft,
-        margin_top:         47,
+        anchor:             Center,
+        margin_top:         0,
         margin_bottom:      0,
-        margin_left:        10,
+        margin_left:        0,
         margin_right:       0,
     ),
 
     scrollbar:
     (
-        show:                    true,
+        show:                    false,
         width:                   4,
         margin:                  0,
         scroller_width:          3,
@@ -86,7 +86,7 @@ LauncherConfig
 
     entry:
     (
-        name_size:              13,
+        name_size:              14,
         name_color:             RGB((235, 219, 178)),
         selected_name_color:    RGB((251, 241, 199)),
         hovered_name_color:     RGB((254, 128, 25)),
@@ -94,9 +94,9 @@ LauncherConfig
         name_font_style:        Normal,
         name_font_family:       "",
         name_align:             Left,
-        name_max_chars:         40,
+        name_max_chars:         45,
 
-        comment_size:           10,
+        comment_size:           11,
         comment_color:          RGB((102, 92, 84)),
         selected_comment_color: RGB((142, 192, 124)),
         hovered_comment_color:  RGB((102, 92, 84)),
@@ -104,11 +104,11 @@ LauncherConfig
         comment_font_style:     Normal,
         comment_font_family:    "",
         comment_align:          Left,
-        comment_max_chars:      22,
+        comment_max_chars:      45,
         show_comment:           false,
         name_comment_spacing:   2,
 
-        padding:                (8, 6, 8, 6),
+        padding:                (5, 10, 5, 10),
         label_position:         Right,
         width:                  0,
         height:                 0,
@@ -156,12 +156,12 @@ LauncherConfig
     (
         show:                  true,
         use_real_icons:        true,
-        width:                 44,
-        height:                44,
-        text_size:             20,
-        gap:                   8,
+        width:                 28,
+        height:                28,
+        text_size:             17,
+        gap:                   10,
         padding:               (0, 0),
-        opacity:               0.9,
+        opacity:               1.0,
         selected_opacity:      1.0,
         hovered_opacity:       1.0,
 
